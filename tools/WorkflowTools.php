@@ -58,4 +58,46 @@ class WorkflowTools
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/actions/jobs/{$job_id}/logs");
 	}
+
+	#[McpTool(name: 'list_repo_action_secrets', description: 'List action secrets for a repository (names only, values are never exposed).', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo']])]
+	public function list_repo_action_secrets(string $owner, string $repo, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
+	{
+		$client = $this->manager->getClient($instance, $user);
+		return $client->get("repos/{$owner}/{$repo}/actions/secrets", ['page' => $page, 'limit' => $limit]);
+	}
+
+	#[McpTool(name: 'create_or_update_repo_action_secret', description: 'Create or update an action secret for a repository.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'secret_name' => ['type' => 'string', 'description' => 'Secret name (e.g., FORGE_TOKEN)'], 'data' => ['type' => 'string', 'description' => 'Secret value'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'secret_name', 'data']])]
+	public function create_or_update_repo_action_secret(string $owner, string $repo, string $secret_name, string $data, ?string $instance = null, ?string $user = null): array
+	{
+		$client = $this->manager->getClient($instance, $user);
+		return $client->put("repos/{$owner}/{$repo}/actions/secrets/{$secret_name}", ['data' => $data]);
+	}
+
+	#[McpTool(name: 'delete_repo_action_secret', description: 'Delete an action secret from a repository.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'secret_name' => ['type' => 'string', 'description' => 'Secret name to delete'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'secret_name']])]
+	public function delete_repo_action_secret(string $owner, string $repo, string $secret_name, ?string $instance = null, ?string $user = null): array
+	{
+		$client = $this->manager->getClient($instance, $user);
+		return $client->delete("repos/{$owner}/{$repo}/actions/secrets/{$secret_name}");
+	}
+
+	#[McpTool(name: 'list_org_action_secrets', description: 'List action secrets for an organization.', inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string', 'description' => 'Organization name'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['org']])]
+	public function list_org_action_secrets(string $org, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
+	{
+		$client = $this->manager->getClient($instance, $user);
+		return $client->get("orgs/{$org}/actions/secrets", ['page' => $page, 'limit' => $limit]);
+	}
+
+	#[McpTool(name: 'create_or_update_org_action_secret', description: 'Create or update an action secret for an organization.', inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string', 'description' => 'Organization name'], 'secret_name' => ['type' => 'string', 'description' => 'Secret name'], 'data' => ['type' => 'string', 'description' => 'Secret value'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['org', 'secret_name', 'data']])]
+	public function create_or_update_org_action_secret(string $org, string $secret_name, string $data, ?string $instance = null, ?string $user = null): array
+	{
+		$client = $this->manager->getClient($instance, $user);
+		return $client->put("orgs/{$org}/actions/secrets/{$secret_name}", ['data' => $data]);
+	}
+
+	#[McpTool(name: 'delete_org_action_secret', description: 'Delete an action secret from an organization.', inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string', 'description' => 'Organization name'], 'secret_name' => ['type' => 'string', 'description' => 'Secret name'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['org', 'secret_name']])]
+	public function delete_org_action_secret(string $org, string $secret_name, ?string $instance = null, ?string $user = null): array
+	{
+		$client = $this->manager->getClient($instance, $user);
+		return $client->delete("orgs/{$org}/actions/secrets/{$secret_name}");
+	}
 }

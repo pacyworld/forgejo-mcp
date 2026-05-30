@@ -1,0 +1,16 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Config (contains tokens)
+config/instances.json
+
+# Build artifacts
+*.phar
+temp/
+
+# OS
+.DS_Store
+Thumbs.db

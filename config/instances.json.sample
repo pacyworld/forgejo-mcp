@@ -1,0 +1,34 @@
+{
+    "default_instance": "pacyworld",
+    "default_user": "admin",
+    "instances": {
+        "pacyworld": {
+            "url": "https://pacyworld.dev",
+            "description": "Pacy World Forgejo",
+            "verify_ssl": true,
+            "timeout": 30,
+            "users": {
+                "admin": {
+                    "token": "your-personal-access-token-here",
+                    "description": "Admin account"
+                },
+                "ci": {
+                    "token": "your-ci-bot-token-here",
+                    "description": "CI/CD bot"
+                }
+            }
+        },
+        "codeberg": {
+            "url": "https://codeberg.org",
+            "description": "Codeberg",
+            "verify_ssl": true,
+            "timeout": 30,
+            "users": {
+                "personal": {
+                    "token": "your-codeberg-token-here",
+                    "description": "Personal account"
+                }
+            }
+        }
+    }
+}

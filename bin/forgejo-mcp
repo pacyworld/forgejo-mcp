@@ -1,0 +1,127 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Forgejo MCP Server — stdio Entry Point
+ *
+ * Multi-instance, multi-user Forgejo management via the Model Context Protocol.
+ * Communicates over stdin/stdout using JSON-RPC 2.0.
+ *
+ * Usage:
+ *   php bin/forgejo-mcp
+ *
+ * Environment:
+ *   FORGEJO_MCP_CONFIG  Path to instances.json configuration file
+ *
+ * @package    ForgejoMCP
+ * @author     Daniel Morante
+ * @copyright  2026 The Daniel Morante Company, Inc.
+ * @license    BSD-2-Clause
+ */
+
+// Handle --version before bootstrap
+$versionFlags = ['--version', '-v', 'version', '-V'];
+if (isset($argv[1]) && in_array($argv[1], $versionFlags, true)) {
+	require_once dirname(__DIR__) . '/system/app.conf.php';
+	echo APPLICATION_NAME . ' ' . APPLICATION_VERSION . "\n";
+	exit(0);
+}
+
+// Enchilada Framework bootstrap
+require_once dirname(__DIR__) . '/system/bootstrap.inc.php';
+
+// Verify required PHP extensions
+$requiredExtensions = ['openssl', 'curl'];
+$missing = array_filter($requiredExtensions, fn($ext) => !extension_loaded($ext));
+if (!empty($missing)) {
+	fwrite(STDERR, "[forgejo-mcp] ERROR: Missing required PHP extension(s): " . implode(', ', $missing) . "\n");
+	fwrite(STDERR, "  Install via: pkg install " . implode(' ', array_map(fn($e) => "php84-{$e}", $missing)) . "\n");
+	exit(1);
+}
+
+use EnchiladaMCP\McpServer;
+use EnchiladaMCP\StdioTransport;
+use Forgejo\InstanceManager;
+
+// --- Configuration ---
+
+$configPath = getenv('FORGEJO_MCP_CONFIG') ?: null;
+
+// Check CLI argument: --config=/path/to/instances.json
+foreach ($argv ?? [] as $arg) {
+	if (str_starts_with($arg, '--config=')) {
+		$configPath = substr($arg, 9);
+	}
+}
+
+// Default config location
+if ($configPath === null) {
+	$candidates = [
+		APPLICATION_CONFDIR . 'instances.json',
+		getenv('HOME') . '/.config/forgejo-mcp/instances.json',
+		'/usr/local/etc/forgejo-mcp/instances.json',
+	];
+	foreach ($candidates as $candidate) {
+		if (file_exists($candidate)) {
+			$configPath = $candidate;
+			break;
+		}
+	}
+}
+
+if ($configPath === null || !file_exists($configPath)) {
+	fwrite(STDERR, "[forgejo-mcp] ERROR: No configuration file found.\n");
+	fwrite(STDERR, "  Set FORGEJO_MCP_CONFIG environment variable or use --config=/path/to/instances.json\n");
+	fwrite(STDERR, "  Or place instances.json in config/ directory.\n");
+	exit(1);
+}
+
+// --- Bootstrap ---
+
+function debug(string $message): void
+{
+	fwrite(STDERR, "[forgejo-mcp] " . $message . "\n");
+}
+
+try {
+	$manager = InstanceManager::fromFile($configPath);
+} catch (\Exception $e) {
+	fwrite(STDERR, "[forgejo-mcp] ERROR: " . $e->getMessage() . "\n");
+	exit(1);
+}
+
+$instanceCount = $manager->count();
+debug("Loaded {$instanceCount} instance(s) from {$configPath} (default: {$manager->getDefaultInstance()}/{$manager->getDefaultUser()})");
+
+// --- Create MCP Server ---
+
+$server = new McpServer(APPLICATION_SLUG, APPLICATION_VERSION);
+
+// Load instructions
+$instructionsFile = APPLICATION_CONFDIR . 'instructions.txt';
+if (file_exists($instructionsFile)) {
+	$server->setInstructions(file_get_contents($instructionsFile));
+}
+
+// Register tools
+$toolDir = APPLICATION_ROOT . 'tools';
+if (is_dir($toolDir)) {
+	foreach (scandir($toolDir) as $entry) {
+		if (substr($entry, -4) !== '.php') continue;
+		$className = basename($entry, '.php');
+		require_once $toolDir . DIRECTORY_SEPARATOR . $entry;
+		if (class_exists($className, false)) {
+			$server->register(new $className($manager));
+			debug("Registered tools: {$className}");
+		}
+	}
+}
+
+debug("MCP server started (stdio transport)");
+
+// --- Run ---
+
+$transport = new StdioTransport($server);
+$transport->setLogger('debug');
+$transport->run();
+
+debug("MCP server stopped");

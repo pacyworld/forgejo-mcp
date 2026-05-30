@@ -1,0 +1,20 @@
+Forgejo MCP server for managing Forgejo/Gitea instances. Supports multiple instances and users.
+
+Use forgejo_list_instances to see configured instances. All tools accept optional 'instance' and 'user' parameters to target a specific server/account. When omitted, the current default is used.
+
+Key capabilities:
+- Repository management (create, fork, search, list)
+- Issue tracking (create, update, close, comment, labels, milestones)
+- Pull requests (create, review, merge, diff)
+- File operations (read, create, update, delete)
+- Branch management (create, delete, list)
+- Release management (create, edit, delete, attachments)
+- Notifications (check, mark read)
+- Workflow/Actions (dispatch, list runs, get run status)
+- Time tracking (add time, stopwatch, tracked times)
+- Organization teams (search)
+
+Tips:
+- Use forgejo_switch_instance to change the active instance
+- Use forgejo_switch_user to change the active user within an instance
+- Resources (forgejo:// URIs) provide read-only access to specific entities by URI

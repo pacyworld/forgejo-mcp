@@ -115,4 +115,24 @@ class RepoTools
 		if ($name !== null) $data['name'] = $name;
 		return $client->post("repos/{$owner}/{$repo}/forks", $data ?: null);
 	}
+
+	#[McpTool(name: 'list_repo_contents', description: 'List files and directories at a given path in a repository. Use path="" for the root.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'path' => ['type' => 'string', 'description' => 'Directory path (empty string for root)'], 'ref' => ['type' => 'string', 'description' => 'Branch, tag, or SHA (optional)'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo']])]
+	public function list_repo_contents(string $owner, string $repo, string $path = '', ?string $ref = null, ?string $instance = null, ?string $user = null): array
+	{
+		$client = $this->manager->getClient($instance, $user);
+		$endpoint = "repos/{$owner}/{$repo}/contents";
+		if (!empty($path)) $endpoint .= "/{$path}";
+		$query = [];
+		if ($ref !== null) $query['ref'] = $ref;
+		return $client->get($endpoint, $query);
+	}
+
+	#[McpTool(name: 'get_repo_tree', description: 'Get the Git tree of a repository. With recursive=true, returns the complete file tree.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'sha' => ['type' => 'string', 'description' => 'Tree SHA or branch name'], 'recursive' => ['type' => 'boolean', 'description' => 'Recurse into subtrees (default false)'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'sha']])]
+	public function get_repo_tree(string $owner, string $repo, string $sha, bool $recursive = false, ?string $instance = null, ?string $user = null): array
+	{
+		$client = $this->manager->getClient($instance, $user);
+		$query = [];
+		if ($recursive) $query['recursive'] = 'true';
+		return $client->get("repos/{$owner}/{$repo}/git/trees/{$sha}", $query);
+	}
 }

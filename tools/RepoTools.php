@@ -63,12 +63,13 @@ class RepoTools
 
 	#[McpTool(
 		name: 'create_repo',
-		description: 'Create a new repository for the authenticated user.',
+		description: 'Create a new repository. If organization is specified, creates under that org; otherwise creates under the authenticated user.',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
 				'name' => ['type' => 'string', 'description' => 'Repository name'],
 				'description' => ['type' => 'string', 'description' => 'Repository description'],
+				'organization' => ['type' => 'string', 'description' => 'Organization to create the repo under (omit for personal repo)'],
 				'private' => ['type' => 'boolean', 'description' => 'Whether the repo is private (default false)'],
 				'auto_init' => ['type' => 'boolean', 'description' => 'Initialize with README (default false)'],
 				'default_branch' => ['type' => 'string', 'description' => 'Default branch name (default "master")'],
@@ -78,7 +79,7 @@ class RepoTools
 			'required' => ['name'],
 		]
 	)]
-	public function create_repo(string $name, string $description = '', bool $private = false, bool $auto_init = false, string $default_branch = 'master', ?string $instance = null, ?string $user = null): array
+	public function create_repo(string $name, string $description = '', ?string $organization = null, bool $private = false, bool $auto_init = false, string $default_branch = 'master', ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$data = [
@@ -88,6 +89,11 @@ class RepoTools
 			'auto_init' => $auto_init,
 			'default_branch' => $default_branch,
 		];
+
+		if ($organization !== null) {
+			return $client->post("orgs/{$organization}/repos", $data);
+		}
+
 		return $client->post('user/repos', $data);
 	}
 

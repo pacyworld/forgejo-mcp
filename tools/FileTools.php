@@ -141,9 +141,6 @@ class FileTools
 			'sha' => $sha,
 		];
 		if ($branch !== null) $data['branch'] = $branch;
-		// Forgejo DELETE for file contents uses a request body
-		// We need to send this as a DELETE with body - use post with _method override or custom approach
-		// Actually the Forgejo API accepts DELETE with JSON body for this endpoint
-		return $client->delete("repos/{$owner}/{$repo}/contents/{$filepath}?" . http_build_query($data));
+		return $client->delete("repos/{$owner}/{$repo}/contents/{$filepath}", $data);
 	}
 }

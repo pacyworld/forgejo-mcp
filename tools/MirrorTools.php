@@ -59,6 +59,6 @@ class MirrorTools
 	public function sync_push_mirror(string $owner, string $repo, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
-		return $client->post("repos/{$owner}/{$repo}/push_mirrors-sync");
+		return $client->post("repos/{$owner}/{$repo}/push_mirrors/sync");
 	}
 }

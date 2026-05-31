@@ -43,14 +43,15 @@ class IssueAttachmentTools
 		return $meta;
 	}
 
-	#[McpTool(name: 'create_issue_attachment', description: 'Upload a new attachment to an issue or pull request. Provide base64-encoded content.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer'], 'filename' => ['type' => 'string', 'description' => 'Filename for the attachment'], 'content' => ['type' => 'string', 'description' => 'Base64-encoded file content'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'index', 'filename', 'content']])]
+	#[McpTool(name: 'create_issue_attachment', description: 'Upload a new attachment to an issue or pull request. Provide base64-encoded file content.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer'], 'filename' => ['type' => 'string', 'description' => 'Filename for the attachment'], 'content' => ['type' => 'string', 'description' => 'Base64-encoded file content'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'index', 'filename', 'content']])]
 	public function create_issue_attachment(string $owner, string $repo, int $index, string $filename, string $content, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
-		return $client->post("repos/{$owner}/{$repo}/issues/{$index}/assets", [
-			'name' => $filename,
-			'content' => $content,
-		]);
+		$decoded = base64_decode($content, true);
+		if ($decoded === false) {
+			throw new \InvalidArgumentException("Invalid base64 content");
+		}
+		return $client->uploadFile("repos/{$owner}/{$repo}/issues/{$index}/assets", 'attachment', $filename, $decoded);
 	}
 
 	#[McpTool(name: 'edit_issue_attachment', description: 'Rename an issue/PR attachment.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'name' => ['type' => 'string', 'description' => 'New filename'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'index', 'attachment_id', 'name']])]

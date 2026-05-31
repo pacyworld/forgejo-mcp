@@ -53,10 +53,10 @@ class WorkflowTools
 	}
 
 	#[McpTool(name: 'get_workflow_job_logs', description: 'Download logs for a specific workflow job.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'job_id' => ['type' => 'integer', 'description' => 'Job ID (from get_workflow_run_jobs)'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'job_id']])]
-	public function get_workflow_job_logs(string $owner, string $repo, int $job_id, ?string $instance = null, ?string $user = null): array
+	public function get_workflow_job_logs(string $owner, string $repo, int $job_id, ?string $instance = null, ?string $user = null): string
 	{
 		$client = $this->manager->getClient($instance, $user);
-		return $client->get("repos/{$owner}/{$repo}/actions/jobs/{$job_id}/logs");
+		return $client->getRaw("repos/{$owner}/{$repo}/actions/jobs/{$job_id}/logs");
 	}
 
 	#[McpTool(name: 'list_repo_action_secrets', description: 'List action secrets for a repository (names only, values are never exposed).', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo']])]

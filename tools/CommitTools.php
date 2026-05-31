@@ -27,6 +27,6 @@ class CommitTools
 		$query = ['page' => $page, 'limit' => $limit];
 		if ($sha !== null) $query['sha'] = $sha;
 		if ($path !== null) $query['path'] = $path;
-		return $client->get("repos/{$owner}/{$repo}/git/commits", $query);
+		return $client->get("repos/{$owner}/{$repo}/commits", $query);
 	}
 }

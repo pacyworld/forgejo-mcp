@@ -111,13 +111,108 @@ class Client
 	/**
 	 * Perform a DELETE request.
 	 *
-	 * @param  string $endpoint API endpoint
-	 * @return array            Decoded JSON response (may be empty)
+	 * @param  string     $endpoint API endpoint
+	 * @param  array|null $data     Optional JSON body (some Forgejo endpoints require it)
+	 * @return array                Decoded JSON response (may be empty)
 	 * @throws ClientException
 	 */
-	public function delete(string $endpoint): array
+	public function delete(string $endpoint, ?array $data = null): array
 	{
-		return $this->request('DELETE', $endpoint);
+		return $this->request('DELETE', $endpoint, $data);
+	}
+
+	/**
+	 * Perform a GET request that returns raw text (not JSON).
+	 *
+	 * Used for diffs, logs, and other plain-text endpoints.
+	 *
+	 * @param  string $endpoint API endpoint
+	 * @param  array  $query    Query parameters
+	 * @return string           Raw response body
+	 * @throws ClientException
+	 */
+	public function getRaw(string $endpoint, array $query = []): string
+	{
+		$path = 'api/v1/' . ltrim($endpoint, '/');
+		if (!empty($query)) {
+			$path .= '?' . http_build_query($query);
+		}
+
+		$url = $this->baseUrl . '/' . $path;
+		$headers = [
+			'Accept: text/plain',
+			'Authorization: token ' . $this->token,
+		];
+
+		if ($this->httpClient !== null) {
+			$response = ($this->httpClient)('GET', $url, $headers, null);
+			if ($response['code'] >= 400) {
+				throw new ClientException("HTTP {$response['code']} for {$url}", $response['code']);
+			}
+			return $response['body'];
+		}
+
+		try {
+			$result = $this->http->call($path, null, 'GET', $headers, null, 'raw');
+		} catch (\Exception $e) {
+			throw new ClientException("HTTP error: " . $e->getMessage(), 0);
+		}
+
+		$httpCode = $this->http->getHttpCode();
+		if ($httpCode >= 400) {
+			throw new ClientException("API error ({$httpCode}) for {$url}", $httpCode);
+		}
+
+		return is_string($result) ? $result : '';
+	}
+
+	/**
+	 * Upload a file via multipart/form-data POST.
+	 *
+	 * Used for attachment uploads (issues, comments, releases).
+	 *
+	 * @param  string $endpoint  API endpoint
+	 * @param  string $fieldName Form field name (usually "attachment")
+	 * @param  string $filename  Filename for the upload
+	 * @param  string $content   Raw binary file content
+	 * @return array             Decoded JSON response
+	 * @throws ClientException
+	 */
+	public function uploadFile(string $endpoint, string $fieldName, string $filename, string $content): array
+	{
+		$path = 'api/v1/' . ltrim($endpoint, '/');
+		$url = $this->baseUrl . '/' . $path;
+		$boundary = 'EnchiladaBoundary' . uniqid();
+
+		$body = "--{$boundary}\r\n"
+			. "Content-Disposition: form-data; name=\"{$fieldName}\"; filename=\"{$filename}\"\r\n"
+			. "Content-Type: application/octet-stream\r\n\r\n"
+			. $content . "\r\n"
+			. "--{$boundary}--\r\n";
+
+		$headers = [
+			'Accept: application/json',
+			'Authorization: token ' . $this->token,
+			'Content-Type: multipart/form-data; boundary=' . $boundary,
+		];
+
+		if ($this->httpClient !== null) {
+			$response = ($this->httpClient)('POST', $url, $headers, $body);
+			return $this->handleResponse($response['code'], $response['body'], $url);
+		}
+
+		try {
+			$result = $this->http->call($path, $body, 'POST', $headers, null, 'json');
+		} catch (\Exception $e) {
+			throw new ClientException("Upload error: " . $e->getMessage(), 0);
+		}
+
+		$httpCode = $this->http->getHttpCode();
+		if ($httpCode >= 400) {
+			throw new ClientException("Upload failed ({$httpCode}) for {$url}", $httpCode);
+		}
+
+		return is_array($result) ? $result : [];
 	}
 
 	/**
@@ -153,7 +248,7 @@ class Client
 			'Authorization: token ' . $this->token,
 		];
 
-		if (in_array($method, ['POST', 'PATCH', 'PUT']) && $data !== null) {
+		if (in_array($method, ['POST', 'PATCH', 'PUT', 'DELETE']) && $data !== null) {
 			$headers[] = 'Content-Type: application/json';
 		}
 

@@ -43,14 +43,15 @@ class CommentAttachmentTools
 		return $meta;
 	}
 
-	#[McpTool(name: 'create_comment_attachment', description: 'Upload a new attachment to an issue/PR comment. Provide base64-encoded content.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer'], 'filename' => ['type' => 'string', 'description' => 'Filename'], 'content' => ['type' => 'string', 'description' => 'Base64-encoded file content'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'comment_id', 'filename', 'content']])]
+	#[McpTool(name: 'create_comment_attachment', description: 'Upload a new attachment to an issue/PR comment. Provide base64-encoded file content.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer'], 'filename' => ['type' => 'string', 'description' => 'Filename'], 'content' => ['type' => 'string', 'description' => 'Base64-encoded file content'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'comment_id', 'filename', 'content']])]
 	public function create_comment_attachment(string $owner, string $repo, int $comment_id, string $filename, string $content, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
-		return $client->post("repos/{$owner}/{$repo}/issues/comments/{$comment_id}/assets", [
-			'name' => $filename,
-			'content' => $content,
-		]);
+		$decoded = base64_decode($content, true);
+		if ($decoded === false) {
+			throw new \InvalidArgumentException("Invalid base64 content");
+		}
+		return $client->uploadFile("repos/{$owner}/{$repo}/issues/comments/{$comment_id}/assets", 'attachment', $filename, $decoded);
 	}
 
 	#[McpTool(name: 'edit_comment_attachment', description: 'Rename a comment attachment.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'name' => ['type' => 'string', 'description' => 'New filename'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'comment_id', 'attachment_id', 'name']])]

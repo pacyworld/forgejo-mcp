@@ -198,9 +198,6 @@ class PullRequestTools
 	public function get_pull_request_diff(string $owner, string $repo, int $index, ?string $instance = null, ?string $user = null): string
 	{
 		$client = $this->manager->getClient($instance, $user);
-		$result = $client->get("repos/{$owner}/{$repo}/pulls/{$index}.diff");
-		// The diff endpoint returns raw text, but our client decodes JSON
-		// If it fails JSON decode, we get an exception - need to handle raw response
-		return is_array($result) ? json_encode($result) : (string)$result;
+		return $client->getRaw("repos/{$owner}/{$repo}/pulls/{$index}.diff");
 	}
 }

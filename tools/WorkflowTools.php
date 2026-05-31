@@ -35,7 +35,11 @@ class WorkflowTools
 		$client = $this->manager->getClient($instance, $user);
 		$query = ['page' => $page, 'limit' => $limit];
 		if ($status !== null) $query['status'] = $status;
-		return $client->get("repos/{$owner}/{$repo}/actions/runs", $query);
+		$result = $client->get("repos/{$owner}/{$repo}/actions/runs", $query);
+		if (isset($result['workflow_runs']) && is_array($result['workflow_runs'])) {
+			$result['workflow_runs'] = array_reverse($result['workflow_runs']);
+		}
+		return $result;
 	}
 
 	#[McpTool(name: 'get_workflow_run', description: 'Get details of a specific workflow run.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'run_id' => ['type' => 'integer', 'description' => 'Workflow run ID'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'run_id']])]

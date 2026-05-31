@@ -131,9 +131,9 @@ class Client
 	 * @return string           Raw response body
 	 * @throws ClientException
 	 */
-	public function getRaw(string $endpoint, array $query = []): string
+	public function getRaw(string $endpoint, array $query = [], bool $webRoute = false): string
 	{
-		$path = 'api/v1/' . ltrim($endpoint, '/');
+		$path = $webRoute ? ltrim($endpoint, '/') : 'api/v1/' . ltrim($endpoint, '/');
 		if (!empty($query)) {
 			$path .= '?' . http_build_query($query);
 		}

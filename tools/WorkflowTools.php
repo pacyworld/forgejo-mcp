@@ -45,18 +45,11 @@ class WorkflowTools
 		return $client->get("repos/{$owner}/{$repo}/actions/runs/{$run_id}");
 	}
 
-	#[McpTool(name: 'get_workflow_run_jobs', description: 'List jobs for a workflow run. Use this to find job IDs for log download.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'run_id' => ['type' => 'integer', 'description' => 'Workflow run ID'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'run_id']])]
-	public function get_workflow_run_jobs(string $owner, string $repo, int $run_id, ?string $instance = null, ?string $user = null): array
+	#[McpTool(name: 'get_workflow_job_logs', description: 'Download logs for a workflow run job. Specify job_index (0-based, default 0) and attempt (default 1).', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'run_id' => ['type' => 'integer', 'description' => 'Workflow run ID (from list_workflow_runs)'], 'job_index' => ['type' => 'integer', 'description' => 'Job index within the run (0-based, default 0)'], 'attempt' => ['type' => 'integer', 'description' => 'Attempt number (default 1)'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'run_id']])]
+	public function get_workflow_job_logs(string $owner, string $repo, int $run_id, int $job_index = 0, int $attempt = 1, ?string $instance = null, ?string $user = null): string
 	{
 		$client = $this->manager->getClient($instance, $user);
-		return $client->get("repos/{$owner}/{$repo}/actions/runs/{$run_id}/jobs");
-	}
-
-	#[McpTool(name: 'get_workflow_job_logs', description: 'Download logs for a specific workflow job.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'job_id' => ['type' => 'integer', 'description' => 'Job ID (from get_workflow_run_jobs)'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'job_id']])]
-	public function get_workflow_job_logs(string $owner, string $repo, int $job_id, ?string $instance = null, ?string $user = null): string
-	{
-		$client = $this->manager->getClient($instance, $user);
-		return $client->getRaw("repos/{$owner}/{$repo}/actions/jobs/{$job_id}/logs");
+		return $client->getRaw("{$owner}/{$repo}/actions/runs/{$run_id}/jobs/{$job_index}/attempt/{$attempt}/logs", [], true);
 	}
 
 	#[McpTool(name: 'list_repo_action_secrets', description: 'List action secrets for a repository (names only, values are never exposed).', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo']])]

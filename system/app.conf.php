@@ -6,7 +6,7 @@
 
 define('APPLICATION_NAME', 'Forgejo MCP Server');
 define('APPLICATION_SLUG', 'forgejo-mcp');
-define('APPLICATION_VERSION', '1.0.0');
+define('APPLICATION_VERSION', '1.0.1');
 define('APPLICATION_WEBSITE', 'https://pacyworld.dev/pacyworld/forgejo-mcp');
 
 define('APPLICATION_ROOT', dirname(__DIR__) . DIRECTORY_SEPARATOR);

@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.0.1 — 2026-05-31
+
+### Bug Fixes
+- **list_workflow_runs**: Return results in descending order (newest first). The Forgejo API returns workflow runs in ascending order by default, which made the most recent runs appear last.
+
 ## v1.0.0 — 2026-05-30
 
 Initial release.

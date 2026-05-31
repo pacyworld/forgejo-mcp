@@ -14,3 +14,4 @@ temp/
 # OS
 .DS_Store
 Thumbs.db
+config/instances-test.json

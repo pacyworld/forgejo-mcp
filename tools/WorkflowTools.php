@@ -45,11 +45,27 @@ class WorkflowTools
 		return $client->get("repos/{$owner}/{$repo}/actions/runs/{$run_id}");
 	}
 
-	#[McpTool(name: 'get_workflow_job_logs', description: 'Download logs for a workflow run job. Specify job_index (0-based, default 0) and attempt (default 1).', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'run_id' => ['type' => 'integer', 'description' => 'Workflow run ID (from list_workflow_runs)'], 'job_index' => ['type' => 'integer', 'description' => 'Job index within the run (0-based, default 0)'], 'attempt' => ['type' => 'integer', 'description' => 'Attempt number (default 1)'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'run_id']])]
-	public function get_workflow_job_logs(string $owner, string $repo, int $run_id, int $job_index = 0, int $attempt = 1, ?string $instance = null, ?string $user = null): string
+	#[McpTool(name: 'get_workflow_job_logs', description: 'Download logs for a workflow run job. Works for public repositories. Private repository logs require browser session auth (Forgejo limitation — the Actions log endpoint does not accept API tokens). Specify job_index (0-based, default 0) and attempt (default 1).', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'run_id' => ['type' => 'integer', 'description' => 'Workflow run ID (from list_workflow_runs)'], 'job_index' => ['type' => 'integer', 'description' => 'Job index within the run (0-based, default 0)'], 'attempt' => ['type' => 'integer', 'description' => 'Attempt number (default 1)'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'run_id']])]
+	public function get_workflow_job_logs(string $owner, string $repo, int $run_id, int $job_index = 0, int $attempt = 1, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
-		return $client->getRaw("{$owner}/{$repo}/actions/runs/{$run_id}/jobs/{$job_index}/attempt/{$attempt}/logs", [], true);
+
+		try {
+			$logs = $client->getRaw("{$owner}/{$repo}/actions/runs/{$run_id}/jobs/{$job_index}/attempt/{$attempt}/logs", [], true);
+		} catch (\Forgejo\ClientException $e) {
+			if ($e->getCode() === 404) {
+				$url = $client->getBaseUrl() . "/{$owner}/{$repo}/actions/runs/{$run_id}/jobs/{$job_index}/attempt/{$attempt}/logs";
+				return [
+					'error' => 'Log download failed (404). This is likely a private repository.',
+					'reason' => 'Forgejo does not expose workflow logs via its API. Logs are served from a web route that requires browser session authentication. API tokens are not accepted for this endpoint.',
+					'limitation' => 'This is a known Forgejo platform limitation, not a bug in this MCP server.',
+					'workaround' => "View the logs in your browser: {$url}",
+				];
+			}
+			throw $e;
+		}
+
+		return ['logs' => $logs];
 	}
 
 	#[McpTool(name: 'list_repo_action_secrets', description: 'List action secrets for a repository (names only, values are never exposed).', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo']])]

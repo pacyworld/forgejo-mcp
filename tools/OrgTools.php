@@ -20,7 +20,7 @@ class OrgTools
 		$this->manager = $manager;
 	}
 
-	#[McpTool(name: 'get_org', description: 'Get organization details.', inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string', 'description' => 'Organization name'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['org']])]
+	#[McpTool(name: 'get_org', description: 'Get organization details.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string', 'description' => 'Organization name'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['org']])]
 	public function get_org(string $org, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -55,28 +55,28 @@ class OrgTools
 		return $client->delete("orgs/{$org}");
 	}
 
-	#[McpTool(name: 'list_my_orgs', description: 'List organizations the authenticated user belongs to.', inputSchema: ['type' => 'object', 'properties' => ['page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => []])]
+	#[McpTool(name: 'list_my_orgs', description: 'List organizations the authenticated user belongs to.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => []])]
 	public function list_my_orgs(int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get('user/orgs', ['page' => $page, 'limit' => $limit]);
 	}
 
-	#[McpTool(name: 'list_user_orgs', description: "List a user's organizations.", inputSchema: ['type' => 'object', 'properties' => ['username' => ['type' => 'string', 'description' => 'Username'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['username']])]
+	#[McpTool(name: 'list_user_orgs', description: "List a user's organizations.", readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['username' => ['type' => 'string', 'description' => 'Username'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['username']])]
 	public function list_user_orgs(string $username, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("users/{$username}/orgs", ['page' => $page, 'limit' => $limit]);
 	}
 
-	#[McpTool(name: 'list_org_members', description: 'List members of an organization.', inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['org']])]
+	#[McpTool(name: 'list_org_members', description: 'List members of an organization.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['org']])]
 	public function list_org_members(string $org, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("orgs/{$org}/members", ['page' => $page, 'limit' => $limit]);
 	}
 
-	#[McpTool(name: 'check_org_membership', description: 'Check if a user is a member of an organization.', inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string'], 'username' => ['type' => 'string'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['org', 'username']])]
+	#[McpTool(name: 'check_org_membership', description: 'Check if a user is a member of an organization.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string'], 'username' => ['type' => 'string'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['org', 'username']])]
 	public function check_org_membership(string $org, string $username, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -90,14 +90,14 @@ class OrgTools
 		return $client->delete("orgs/{$org}/members/{$username}");
 	}
 
-	#[McpTool(name: 'list_org_teams', description: 'List teams in an organization.', inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['org']])]
+	#[McpTool(name: 'list_org_teams', description: 'List teams in an organization.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['org']])]
 	public function list_org_teams(string $org, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("orgs/{$org}/teams", ['page' => $page, 'limit' => $limit]);
 	}
 
-	#[McpTool(name: 'search_org_teams', description: 'Search teams within an organization by name.', inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string', 'description' => 'Organization name'], 'q' => ['type' => 'string', 'description' => 'Search query'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['org']])]
+	#[McpTool(name: 'search_org_teams', description: 'Search teams within an organization by name.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string', 'description' => 'Organization name'], 'q' => ['type' => 'string', 'description' => 'Search query'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['org']])]
 	public function search_org_teams(string $org, ?string $q = null, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);

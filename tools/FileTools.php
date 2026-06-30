@@ -23,6 +23,7 @@ class FileTools
 	#[McpTool(
 		name: 'get_file_content',
 		description: 'Get the content of a file from a repository. Returns decoded content and metadata.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [

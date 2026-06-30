@@ -23,6 +23,7 @@ class NotificationTools
 	#[McpTool(
 		name: 'check_notifications',
 		description: 'List notifications for the authenticated user.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
@@ -46,6 +47,7 @@ class NotificationTools
 	#[McpTool(
 		name: 'get_notification_thread',
 		description: 'Get a specific notification thread.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
@@ -102,6 +104,7 @@ class NotificationTools
 	#[McpTool(
 		name: 'list_repo_notifications',
 		description: 'List notifications for a specific repository.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [

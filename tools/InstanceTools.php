@@ -25,7 +25,8 @@ class InstanceTools
 	 */
 	#[McpTool(
 		name: 'forgejo_list_instances',
-		description: 'List all configured Forgejo instances with their users. Shows which instance and user is currently active.'
+		description: 'List all configured Forgejo instances with their users. Shows which instance and user is currently active.',
+		readOnlyHint: true
 	)]
 	public function forgejo_list_instances(): array
 	{

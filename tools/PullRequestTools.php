@@ -23,6 +23,7 @@ class PullRequestTools
 	#[McpTool(
 		name: 'list_repo_pull_requests',
 		description: 'List pull requests in a repository.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
@@ -51,6 +52,7 @@ class PullRequestTools
 	#[McpTool(
 		name: 'get_pull_request_by_index',
 		description: 'Get a specific pull request by index.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
@@ -160,6 +162,7 @@ class PullRequestTools
 	#[McpTool(
 		name: 'list_pull_request_files',
 		description: 'List files changed in a pull request.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
@@ -183,6 +186,7 @@ class PullRequestTools
 	#[McpTool(
 		name: 'get_pull_request_diff',
 		description: 'Get the diff of a pull request.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [

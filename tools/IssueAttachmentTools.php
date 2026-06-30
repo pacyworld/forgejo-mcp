@@ -20,21 +20,21 @@ class IssueAttachmentTools
 		$this->manager = $manager;
 	}
 
-	#[McpTool(name: 'list_issue_attachments', description: 'List attachments on an issue or pull request.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer', 'description' => 'Issue/PR index'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'index']])]
+	#[McpTool(name: 'list_issue_attachments', description: 'List attachments on an issue or pull request.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer', 'description' => 'Issue/PR index'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'index']])]
 	public function list_issue_attachments(string $owner, string $repo, int $index, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/issues/{$index}/assets");
 	}
 
-	#[McpTool(name: 'get_issue_attachment', description: 'Get metadata for a single issue/PR attachment.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer', 'description' => 'Attachment ID'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'index', 'attachment_id']])]
+	#[McpTool(name: 'get_issue_attachment', description: 'Get metadata for a single issue/PR attachment.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer', 'description' => 'Attachment ID'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'index', 'attachment_id']])]
 	public function get_issue_attachment(string $owner, string $repo, int $index, int $attachment_id, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/issues/{$index}/assets/{$attachment_id}");
 	}
 
-	#[McpTool(name: 'download_issue_attachment', description: 'Download an issue/PR attachment. Returns metadata with browser_download_url for large files.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'index', 'attachment_id']])]
+	#[McpTool(name: 'download_issue_attachment', description: 'Download an issue/PR attachment. Returns metadata with browser_download_url for large files.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'index', 'attachment_id']])]
 	public function download_issue_attachment(string $owner, string $repo, int $index, int $attachment_id, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);

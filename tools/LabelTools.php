@@ -23,6 +23,7 @@ class LabelTools
 	#[McpTool(
 		name: 'list_repo_labels',
 		description: 'List labels for a repository.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
@@ -45,6 +46,7 @@ class LabelTools
 	#[McpTool(
 		name: 'list_org_labels',
 		description: 'List labels for an organization.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [

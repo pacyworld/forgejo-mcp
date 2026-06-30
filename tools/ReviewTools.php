@@ -23,6 +23,7 @@ class ReviewTools
 	#[McpTool(
 		name: 'list_pull_reviews',
 		description: 'List reviews on a pull request.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
@@ -46,6 +47,7 @@ class ReviewTools
 	#[McpTool(
 		name: 'get_pull_review',
 		description: 'Get a specific review by ID.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
@@ -68,6 +70,7 @@ class ReviewTools
 	#[McpTool(
 		name: 'list_pull_review_comments',
 		description: 'List comments within a pull request review.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [

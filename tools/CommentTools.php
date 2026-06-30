@@ -23,6 +23,7 @@ class CommentTools
 	#[McpTool(
 		name: 'list_issue_comments',
 		description: 'List comments on an issue.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
@@ -46,6 +47,7 @@ class CommentTools
 	#[McpTool(
 		name: 'get_issue_comment',
 		description: 'Get a specific comment by ID.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [

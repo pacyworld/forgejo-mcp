@@ -20,28 +20,28 @@ class ReleaseTools
 		$this->manager = $manager;
 	}
 
-	#[McpTool(name: 'list_releases', description: 'List releases for a repository.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'page' => ['type' => 'integer', 'description' => 'Page number'], 'limit' => ['type' => 'integer', 'description' => 'Results per page'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo']])]
+	#[McpTool(name: 'list_releases', description: 'List releases for a repository.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'page' => ['type' => 'integer', 'description' => 'Page number'], 'limit' => ['type' => 'integer', 'description' => 'Results per page'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo']])]
 	public function list_releases(string $owner, string $repo, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/releases", ['page' => $page, 'limit' => $limit]);
 	}
 
-	#[McpTool(name: 'get_release_by_id', description: 'Get a release by its ID.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'id' => ['type' => 'integer', 'description' => 'Release ID'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'id']])]
+	#[McpTool(name: 'get_release_by_id', description: 'Get a release by its ID.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'id' => ['type' => 'integer', 'description' => 'Release ID'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'id']])]
 	public function get_release_by_id(string $owner, string $repo, int $id, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/releases/{$id}");
 	}
 
-	#[McpTool(name: 'get_release_by_tag', description: 'Get a release by its tag name.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'tag' => ['type' => 'string', 'description' => 'Tag name'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'tag']])]
+	#[McpTool(name: 'get_release_by_tag', description: 'Get a release by its tag name.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'tag' => ['type' => 'string', 'description' => 'Tag name'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'tag']])]
 	public function get_release_by_tag(string $owner, string $repo, string $tag, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/releases/tags/{$tag}");
 	}
 
-	#[McpTool(name: 'get_latest_release', description: 'Get the latest release of a repository.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo']])]
+	#[McpTool(name: 'get_latest_release', description: 'Get the latest release of a repository.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo']])]
 	public function get_latest_release(string $owner, string $repo, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);

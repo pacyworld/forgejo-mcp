@@ -20,21 +20,21 @@ class TimeTrackingTools
 		$this->manager = $manager;
 	}
 
-	#[McpTool(name: 'list_issue_tracked_times', description: 'List tracked times on an issue.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer', 'description' => 'Issue index'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'index']])]
+	#[McpTool(name: 'list_issue_tracked_times', description: 'List tracked times on an issue.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer', 'description' => 'Issue index'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'index']])]
 	public function list_issue_tracked_times(string $owner, string $repo, int $index, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/issues/{$index}/times", ['page' => $page, 'limit' => $limit]);
 	}
 
-	#[McpTool(name: 'list_repo_tracked_times', description: 'List all tracked times for a repository.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo']])]
+	#[McpTool(name: 'list_repo_tracked_times', description: 'List all tracked times for a repository.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo']])]
 	public function list_repo_tracked_times(string $owner, string $repo, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/times", ['page' => $page, 'limit' => $limit]);
 	}
 
-	#[McpTool(name: 'list_my_tracked_times', description: 'List tracked times for the authenticated user.', inputSchema: ['type' => 'object', 'properties' => ['page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => []])]
+	#[McpTool(name: 'list_my_tracked_times', description: 'List tracked times for the authenticated user.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => []])]
 	public function list_my_tracked_times(int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -83,7 +83,7 @@ class TimeTrackingTools
 		return $client->delete("repos/{$owner}/{$repo}/issues/{$index}/stopwatch/delete");
 	}
 
-	#[McpTool(name: 'list_my_stopwatches', description: 'List all running stopwatches for the authenticated user.', inputSchema: ['type' => 'object', 'properties' => ['instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => []])]
+	#[McpTool(name: 'list_my_stopwatches', description: 'List all running stopwatches for the authenticated user.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => []])]
 	public function list_my_stopwatches(?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);

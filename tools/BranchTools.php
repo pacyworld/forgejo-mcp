@@ -23,6 +23,7 @@ class BranchTools
 	#[McpTool(
 		name: 'list_branches',
 		description: 'List branches of a repository.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [

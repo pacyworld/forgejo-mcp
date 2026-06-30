@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.0.2 — 2026-06-30
+
+### Added
+- MCP tool annotations (`readOnlyHint`) on all read-only tools (list/get/search/check/download operations), vendored from the updated EnchiladaMCP library. Lets MCP clients (e.g. Windsurf Ask mode) distinguish safe read-only calls from tools that mutate Forgejo state.
+
 ## v1.0.1 — 2026-05-31
 
 ### Bug Fixes

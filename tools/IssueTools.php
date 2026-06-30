@@ -23,6 +23,7 @@ class IssueTools
 	#[McpTool(
 		name: 'list_repo_issues',
 		description: 'List issues in a repository.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
@@ -52,6 +53,7 @@ class IssueTools
 	#[McpTool(
 		name: 'get_issue_by_index',
 		description: 'Get a specific issue by its index number.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [

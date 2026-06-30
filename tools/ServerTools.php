@@ -20,7 +20,7 @@ class ServerTools
 		$this->manager = $manager;
 	}
 
-	#[McpTool(name: 'get_forgejo_mcp_server_version', description: 'Get the version of this Forgejo MCP server.')]
+	#[McpTool(name: 'get_forgejo_mcp_server_version', description: 'Get the version of this Forgejo MCP server.', readOnlyHint: true)]
 	public function get_forgejo_mcp_server_version(): array
 	{
 		return [

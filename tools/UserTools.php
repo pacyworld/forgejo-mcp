@@ -26,6 +26,7 @@ class UserTools
 	#[McpTool(
 		name: 'get_my_user_info',
 		description: 'Get profile information of the currently authenticated user.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
@@ -47,6 +48,7 @@ class UserTools
 	#[McpTool(
 		name: 'search_users',
 		description: 'Search for users by username or email.',
+		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [

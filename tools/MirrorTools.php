@@ -20,7 +20,7 @@ class MirrorTools
 		$this->manager = $manager;
 	}
 
-	#[McpTool(name: 'list_push_mirrors', description: 'List push mirrors for a repository.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo']])]
+	#[McpTool(name: 'list_push_mirrors', description: 'List push mirrors for a repository.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo']])]
 	public function list_push_mirrors(string $owner, string $repo, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -41,7 +41,7 @@ class MirrorTools
 		return $client->post("repos/{$owner}/{$repo}/push_mirrors", $data);
 	}
 
-	#[McpTool(name: 'get_push_mirror', description: 'Get a specific push mirror by name.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'mirror_name' => ['type' => 'string', 'description' => 'Push mirror remote name'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'mirror_name']])]
+	#[McpTool(name: 'get_push_mirror', description: 'Get a specific push mirror by name.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'mirror_name' => ['type' => 'string', 'description' => 'Push mirror remote name'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'mirror_name']])]
 	public function get_push_mirror(string $owner, string $repo, string $mirror_name, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);

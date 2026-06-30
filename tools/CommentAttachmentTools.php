@@ -20,21 +20,21 @@ class CommentAttachmentTools
 		$this->manager = $manager;
 	}
 
-	#[McpTool(name: 'list_comment_attachments', description: 'List attachments on an issue/PR comment.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer', 'description' => 'Comment ID'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'comment_id']])]
+	#[McpTool(name: 'list_comment_attachments', description: 'List attachments on an issue/PR comment.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer', 'description' => 'Comment ID'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'comment_id']])]
 	public function list_comment_attachments(string $owner, string $repo, int $comment_id, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/issues/comments/{$comment_id}/assets");
 	}
 
-	#[McpTool(name: 'get_comment_attachment', description: 'Get metadata for a single comment attachment.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'comment_id', 'attachment_id']])]
+	#[McpTool(name: 'get_comment_attachment', description: 'Get metadata for a single comment attachment.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'comment_id', 'attachment_id']])]
 	public function get_comment_attachment(string $owner, string $repo, int $comment_id, int $attachment_id, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/issues/comments/{$comment_id}/assets/{$attachment_id}");
 	}
 
-	#[McpTool(name: 'download_comment_attachment', description: 'Download a comment attachment. Returns metadata with browser_download_url.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'comment_id', 'attachment_id']])]
+	#[McpTool(name: 'download_comment_attachment', description: 'Download a comment attachment. Returns metadata with browser_download_url.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'comment_id', 'attachment_id']])]
 	public function download_comment_attachment(string $owner, string $repo, int $comment_id, int $attachment_id, ?string $instance = null, ?string $user = null): array
 	{
 		$client = $this->manager->getClient($instance, $user);

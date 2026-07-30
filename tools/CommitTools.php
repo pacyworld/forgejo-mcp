@@ -20,8 +20,8 @@ class CommitTools
 		$this->manager = $manager;
 	}
 
-	#[McpTool(name: 'list_repo_commits', description: 'List commits in a repository.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'sha' => ['type' => 'string', 'description' => 'Branch name or commit SHA (optional)'], 'path' => ['type' => 'string', 'description' => 'Filter by file path (optional)'], 'page' => ['type' => 'integer', 'description' => 'Page number'], 'limit' => ['type' => 'integer', 'description' => 'Results per page'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo']])]
-	public function list_repo_commits(string $owner, string $repo, ?string $sha = null, ?string $path = null, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
+	#[McpTool(name: 'list_repo_commits', description: 'List commits in a repository.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'sha' => ['type' => 'string', 'description' => 'Branch name or commit SHA (optional)'], 'path' => ['type' => 'string', 'description' => 'Filter by file path (optional)'], 'page' => ['type' => 'integer', 'description' => 'Page number'], 'limit' => ['type' => 'integer', 'description' => 'Results per page'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'instance', 'user']])]
+	public function list_repo_commits(string $owner, string $repo, ?string $sha = null, ?string $path = null, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$query = ['page' => $page, 'limit' => $limit];

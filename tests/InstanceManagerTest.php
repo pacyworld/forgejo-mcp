@@ -33,16 +33,11 @@ class InstanceManagerTest extends TestCase
 		$this->assertEquals('admin', $manager->getDefaultUser());
 	}
 
-	public function testConstructorRejectsInvalidInstance(): void
+	public function testConstructorAcceptsEmptyDefaults(): void
 	{
-		$this->expectException(\InvalidArgumentException::class);
-		new InstanceManager($this->sampleConfig(), 'nonexistent', 'admin');
-	}
-
-	public function testConstructorRejectsInvalidUser(): void
-	{
-		$this->expectException(\InvalidArgumentException::class);
-		new InstanceManager($this->sampleConfig(), 'pacyworld', 'nonexistent');
+		$manager = new InstanceManager($this->sampleConfig());
+		$this->assertEquals('', $manager->getDefaultInstance());
+		$this->assertEquals('', $manager->getDefaultUser());
 	}
 
 	public function testConstructorRejectsEmpty(): void
@@ -58,8 +53,6 @@ class InstanceManagerTest extends TestCase
 
 		$this->assertArrayHasKey('pacyworld', $list);
 		$this->assertArrayHasKey('codeberg', $list);
-		$this->assertTrue($list['pacyworld']['is_default']);
-		$this->assertFalse($list['codeberg']['is_default']);
 		$this->assertArrayHasKey('admin', $list['pacyworld']['users']);
 		$this->assertArrayHasKey('ci', $list['pacyworld']['users']);
 	}
@@ -97,7 +90,7 @@ class InstanceManagerTest extends TestCase
 	{
 		$httpClient = fn() => ['code' => 200, 'body' => '{}'];
 		$manager = new InstanceManager($this->sampleConfig(), 'pacyworld', 'admin', $httpClient);
-		$client = $manager->getClient();
+		$client = $manager->getClient('pacyworld', 'admin');
 		$this->assertInstanceOf(\Forgejo\Client::class, $client);
 		$this->assertEquals('https://pacyworld.dev', $client->getBaseUrl());
 	}
@@ -106,9 +99,25 @@ class InstanceManagerTest extends TestCase
 	{
 		$httpClient = fn() => ['code' => 200, 'body' => '{}'];
 		$manager = new InstanceManager($this->sampleConfig(), 'pacyworld', 'admin', $httpClient);
-		$client1 = $manager->getClient();
-		$client2 = $manager->getClient();
+		$client1 = $manager->getClient('pacyworld', 'admin');
+		$client2 = $manager->getClient('pacyworld', 'admin');
 		$this->assertSame($client1, $client2);
+	}
+
+	public function testGetClientRejectsEmptyInstance(): void
+	{
+		$httpClient = fn() => ['code' => 200, 'body' => '{}'];
+		$manager = new InstanceManager($this->sampleConfig(), 'pacyworld', 'admin', $httpClient);
+		$this->expectException(\InvalidArgumentException::class);
+		$manager->getClient('', 'admin');
+	}
+
+	public function testGetClientRejectsEmptyUser(): void
+	{
+		$httpClient = fn() => ['code' => 200, 'body' => '{}'];
+		$manager = new InstanceManager($this->sampleConfig(), 'pacyworld', 'admin', $httpClient);
+		$this->expectException(\InvalidArgumentException::class);
+		$manager->getClient('pacyworld', '');
 	}
 
 	public function testGetClientDifferentUsers(): void

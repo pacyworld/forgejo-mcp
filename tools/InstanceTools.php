@@ -25,63 +25,14 @@ class InstanceTools
 	 */
 	#[McpTool(
 		name: 'forgejo_list_instances',
-		description: 'List all configured Forgejo instances with their users. Shows which instance and user is currently active.',
+		description: 'List all configured Forgejo instances with their users.',
 		readOnlyHint: true
 	)]
 	public function forgejo_list_instances(): array
 	{
 		return [
-			'default_instance' => $this->manager->getDefaultInstance(),
-			'default_user' => $this->manager->getDefaultUser(),
 			'instances' => $this->manager->listInstances(),
-		];
-	}
-
-	/**
-	 * Switch the active Forgejo instance.
-	 */
-	#[McpTool(
-		name: 'forgejo_switch_instance',
-		description: 'Switch the active default Forgejo instance. All subsequent tool calls without an explicit instance parameter will use this instance.',
-		inputSchema: [
-			'type' => 'object',
-			'properties' => [
-				'instance' => ['type' => 'string', 'description' => 'Name of the instance to set as default'],
-			],
-			'required' => ['instance'],
-		]
-	)]
-	public function forgejo_switch_instance(string $instance): array
-	{
-		$this->manager->setDefaultInstance($instance);
-		return [
-			'success' => true,
-			'default_instance' => $instance,
-			'default_user' => $this->manager->getDefaultUser(),
-		];
-	}
-
-	/**
-	 * Switch the active user within the current instance.
-	 */
-	#[McpTool(
-		name: 'forgejo_switch_user',
-		description: 'Switch the active user within the current Forgejo instance. All subsequent tool calls without an explicit user parameter will use this user.',
-		inputSchema: [
-			'type' => 'object',
-			'properties' => [
-				'user' => ['type' => 'string', 'description' => 'Name of the user to set as default'],
-			],
-			'required' => ['user'],
-		]
-	)]
-	public function forgejo_switch_user(string $user): array
-	{
-		$this->manager->setDefaultUser($user);
-		return [
-			'success' => true,
-			'default_instance' => $this->manager->getDefaultInstance(),
-			'default_user' => $user,
+			'count' => $this->manager->count(),
 		];
 	}
 }

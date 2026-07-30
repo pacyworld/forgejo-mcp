@@ -90,7 +90,7 @@ try {
 }
 
 $instanceCount = $manager->count();
-debug("Loaded {$instanceCount} instance(s) from {$configPath} (default: {$manager->getDefaultInstance()}/{$manager->getDefaultUser()})");
+debug("Loaded {$instanceCount} instance(s) from {$configPath}");
 
 // --- Create MCP Server ---
 

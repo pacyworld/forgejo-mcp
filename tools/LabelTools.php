@@ -31,13 +31,13 @@ class LabelTools
 				'repo' => ['type' => 'string', 'description' => 'Repository name'],
 				'page' => ['type' => 'integer', 'description' => 'Page number'],
 				'limit' => ['type' => 'integer', 'description' => 'Results per page'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo'],
+			'required' => ['owner', 'repo', 'instance', 'user'],
 		]
 	)]
-	public function list_repo_labels(string $owner, string $repo, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
+	public function list_repo_labels(string $owner, string $repo, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/labels", ['page' => $page, 'limit' => $limit]);
@@ -53,13 +53,13 @@ class LabelTools
 				'org' => ['type' => 'string', 'description' => 'Organization name'],
 				'page' => ['type' => 'integer', 'description' => 'Page number'],
 				'limit' => ['type' => 'integer', 'description' => 'Results per page'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['org'],
+			'required' => ['org', 'instance', 'user'],
 		]
 	)]
-	public function list_org_labels(string $org, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
+	public function list_org_labels(string $org, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("orgs/{$org}/labels", ['page' => $page, 'limit' => $limit]);
@@ -75,13 +75,13 @@ class LabelTools
 				'repo' => ['type' => 'string', 'description' => 'Repository name'],
 				'index' => ['type' => 'integer', 'description' => 'Issue index number'],
 				'labels' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Label IDs to add'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'index', 'labels'],
+			'required' => ['owner', 'repo', 'index', 'labels', 'instance', 'user'],
 		]
 	)]
-	public function add_issue_labels(string $owner, string $repo, int $index, array $labels, ?string $instance = null, ?string $user = null): array
+	public function add_issue_labels(string $owner, string $repo, int $index, array $labels, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->post("repos/{$owner}/{$repo}/issues/{$index}/labels", ['labels' => $labels]);
@@ -97,13 +97,13 @@ class LabelTools
 				'repo' => ['type' => 'string', 'description' => 'Repository name'],
 				'index' => ['type' => 'integer', 'description' => 'Issue index number'],
 				'label_id' => ['type' => 'integer', 'description' => 'Label ID to remove'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'index', 'label_id'],
+			'required' => ['owner', 'repo', 'index', 'label_id', 'instance', 'user'],
 		]
 	)]
-	public function remove_issue_labels(string $owner, string $repo, int $index, int $label_id, ?string $instance = null, ?string $user = null): array
+	public function remove_issue_labels(string $owner, string $repo, int $index, int $label_id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->delete("repos/{$owner}/{$repo}/issues/{$index}/labels/{$label_id}");

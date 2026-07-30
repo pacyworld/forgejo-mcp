@@ -29,13 +29,13 @@ class RepoTools
 			'properties' => [
 				'page' => ['type' => 'integer', 'description' => 'Page number (default 1)'],
 				'limit' => ['type' => 'integer', 'description' => 'Results per page (default 20)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => [],
+			'required' => ['instance', 'user'],
 		]
 	)]
-	public function list_my_repos(int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
+	public function list_my_repos(int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get('user/repos', ['page' => $page, 'limit' => $limit]);
@@ -51,13 +51,13 @@ class RepoTools
 				'q' => ['type' => 'string', 'description' => 'Search query'],
 				'page' => ['type' => 'integer', 'description' => 'Page number (default 1)'],
 				'limit' => ['type' => 'integer', 'description' => 'Results per page (default 20)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['q'],
+			'required' => ['q', 'instance', 'user'],
 		]
 	)]
-	public function search_repos(string $q, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
+	public function search_repos(string $q, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get('repos/search', ['q' => $q, 'page' => $page, 'limit' => $limit]);
@@ -75,13 +75,13 @@ class RepoTools
 				'private' => ['type' => 'boolean', 'description' => 'Whether the repo is private (default false)'],
 				'auto_init' => ['type' => 'boolean', 'description' => 'Initialize with README (default false)'],
 				'default_branch' => ['type' => 'string', 'description' => 'Default branch name (default "master")'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['name'],
+			'required' => ['name', 'instance', 'user'],
 		]
 	)]
-	public function create_repo(string $name, string $description = '', ?string $organization = null, bool $private = false, bool $auto_init = false, string $default_branch = 'master', ?string $instance = null, ?string $user = null): array
+	public function create_repo(string $name, string $description = '', ?string $organization = null, bool $private = false, bool $auto_init = false, string $default_branch = 'master', string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$data = [
@@ -109,13 +109,13 @@ class RepoTools
 				'repo' => ['type' => 'string', 'description' => 'Repository name to fork'],
 				'organization' => ['type' => 'string', 'description' => 'Fork to this organization (optional)'],
 				'name' => ['type' => 'string', 'description' => 'Name for the forked repo (optional)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo'],
+			'required' => ['owner', 'repo', 'instance', 'user'],
 		]
 	)]
-	public function fork_repo(string $owner, string $repo, ?string $organization = null, ?string $name = null, ?string $instance = null, ?string $user = null): array
+	public function fork_repo(string $owner, string $repo, ?string $organization = null, ?string $name = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$data = [];
@@ -124,8 +124,8 @@ class RepoTools
 		return $client->post("repos/{$owner}/{$repo}/forks", $data ?: null);
 	}
 
-	#[McpTool(name: 'list_repo_contents', description: 'List files and directories at a given path in a repository. Use path="" for the root.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'path' => ['type' => 'string', 'description' => 'Directory path (empty string for root)'], 'ref' => ['type' => 'string', 'description' => 'Branch, tag, or SHA (optional)'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo']])]
-	public function list_repo_contents(string $owner, string $repo, string $path = '', ?string $ref = null, ?string $instance = null, ?string $user = null): array
+	#[McpTool(name: 'list_repo_contents', description: 'List files and directories at a given path in a repository. Use path="" for the root.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'path' => ['type' => 'string', 'description' => 'Directory path (empty string for root)'], 'ref' => ['type' => 'string', 'description' => 'Branch, tag, or SHA (optional)'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'instance', 'user']])]
+	public function list_repo_contents(string $owner, string $repo, string $path = '', ?string $ref = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$endpoint = "repos/{$owner}/{$repo}/contents";
@@ -135,8 +135,8 @@ class RepoTools
 		return $client->get($endpoint, $query);
 	}
 
-	#[McpTool(name: 'get_repo_tree', description: 'Get the Git tree of a repository. With recursive=true, returns the complete file tree.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'sha' => ['type' => 'string', 'description' => 'Tree SHA or branch name'], 'recursive' => ['type' => 'boolean', 'description' => 'Recurse into subtrees (default false)'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo', 'sha']])]
-	public function get_repo_tree(string $owner, string $repo, string $sha, bool $recursive = false, ?string $instance = null, ?string $user = null): array
+	#[McpTool(name: 'get_repo_tree', description: 'Get the Git tree of a repository. With recursive=true, returns the complete file tree.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'sha' => ['type' => 'string', 'description' => 'Tree SHA or branch name'], 'recursive' => ['type' => 'boolean', 'description' => 'Recurse into subtrees (default false)'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'sha', 'instance', 'user']])]
+	public function get_repo_tree(string $owner, string $repo, string $sha, bool $recursive = false, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$query = [];

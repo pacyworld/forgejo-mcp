@@ -31,13 +31,13 @@ class FileTools
 				'repo' => ['type' => 'string', 'description' => 'Repository name'],
 				'filepath' => ['type' => 'string', 'description' => 'Path to the file'],
 				'ref' => ['type' => 'string', 'description' => 'Branch, tag, or commit SHA (optional, defaults to default branch)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'filepath'],
+			'required' => ['owner', 'repo', 'filepath', 'instance', 'user'],
 		]
 	)]
-	public function get_file_content(string $owner, string $repo, string $filepath, ?string $ref = null, ?string $instance = null, ?string $user = null): array
+	public function get_file_content(string $owner, string $repo, string $filepath, ?string $ref = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$query = [];
@@ -65,13 +65,13 @@ class FileTools
 				'message' => ['type' => 'string', 'description' => 'Commit message'],
 				'branch' => ['type' => 'string', 'description' => 'Branch to commit to (optional)'],
 				'new_branch' => ['type' => 'string', 'description' => 'Create a new branch with this name (optional)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'filepath', 'content', 'message'],
+			'required' => ['owner', 'repo', 'filepath', 'content', 'message', 'instance', 'user'],
 		]
 	)]
-	public function create_file(string $owner, string $repo, string $filepath, string $content, string $message, ?string $branch = null, ?string $new_branch = null, ?string $instance = null, ?string $user = null): array
+	public function create_file(string $owner, string $repo, string $filepath, string $content, string $message, ?string $branch = null, ?string $new_branch = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$data = [
@@ -97,13 +97,13 @@ class FileTools
 				'sha' => ['type' => 'string', 'description' => 'SHA of the file being replaced (from get_file_content)'],
 				'branch' => ['type' => 'string', 'description' => 'Branch to commit to (optional)'],
 				'new_branch' => ['type' => 'string', 'description' => 'Create a new branch (optional)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'filepath', 'content', 'message', 'sha'],
+			'required' => ['owner', 'repo', 'filepath', 'content', 'message', 'sha', 'instance', 'user'],
 		]
 	)]
-	public function update_file(string $owner, string $repo, string $filepath, string $content, string $message, string $sha, ?string $branch = null, ?string $new_branch = null, ?string $instance = null, ?string $user = null): array
+	public function update_file(string $owner, string $repo, string $filepath, string $content, string $message, string $sha, ?string $branch = null, ?string $new_branch = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$data = [
@@ -128,13 +128,13 @@ class FileTools
 				'message' => ['type' => 'string', 'description' => 'Commit message'],
 				'sha' => ['type' => 'string', 'description' => 'SHA of the file to delete'],
 				'branch' => ['type' => 'string', 'description' => 'Branch (optional)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'filepath', 'message', 'sha'],
+			'required' => ['owner', 'repo', 'filepath', 'message', 'sha', 'instance', 'user'],
 		]
 	)]
-	public function delete_file(string $owner, string $repo, string $filepath, string $message, string $sha, ?string $branch = null, ?string $instance = null, ?string $user = null): array
+	public function delete_file(string $owner, string $repo, string $filepath, string $message, string $sha, ?string $branch = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$data = [

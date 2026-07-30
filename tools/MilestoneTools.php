@@ -20,8 +20,8 @@ class MilestoneTools
 		$this->manager = $manager;
 	}
 
-	#[McpTool(name: 'list_repo_milestones', description: 'List milestones in a repository.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'state' => ['type' => 'string', 'description' => 'Filter: open, closed, all'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance (optional)'], 'user' => ['type' => 'string', 'description' => 'User identity (optional)']], 'required' => ['owner', 'repo']])]
-	public function list_repo_milestones(string $owner, string $repo, string $state = 'open', int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
+	#[McpTool(name: 'list_repo_milestones', description: 'List milestones in a repository.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'state' => ['type' => 'string', 'description' => 'Filter: open, closed, all'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'instance', 'user']])]
+	public function list_repo_milestones(string $owner, string $repo, string $state = 'open', int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/milestones", ['state' => $state, 'page' => $page, 'limit' => $limit]);

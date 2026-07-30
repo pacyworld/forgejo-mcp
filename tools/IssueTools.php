@@ -35,13 +35,13 @@ class IssueTools
 				'page' => ['type' => 'integer', 'description' => 'Page number (default 1)'],
 				'limit' => ['type' => 'integer', 'description' => 'Results per page (default 20)'],
 				'type' => ['type' => 'string', 'description' => 'Filter by type: issues, pulls (default issues)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo'],
+			'required' => ['owner', 'repo', 'instance', 'user'],
 		]
 	)]
-	public function list_repo_issues(string $owner, string $repo, string $state = 'open', ?string $labels = null, ?string $milestone = null, int $page = 1, int $limit = 20, string $type = 'issues', ?string $instance = null, ?string $user = null): array
+	public function list_repo_issues(string $owner, string $repo, string $state = 'open', ?string $labels = null, ?string $milestone = null, int $page = 1, int $limit = 20, string $type = 'issues', string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$query = ['state' => $state, 'page' => $page, 'limit' => $limit, 'type' => $type];
@@ -60,13 +60,13 @@ class IssueTools
 				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
 				'repo' => ['type' => 'string', 'description' => 'Repository name'],
 				'index' => ['type' => 'integer', 'description' => 'Issue index number'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'index'],
+			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
 	)]
-	public function get_issue_by_index(string $owner, string $repo, int $index, ?string $instance = null, ?string $user = null): array
+	public function get_issue_by_index(string $owner, string $repo, int $index, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/issues/{$index}");
@@ -85,13 +85,13 @@ class IssueTools
 				'labels' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Label IDs to assign'],
 				'milestone' => ['type' => 'integer', 'description' => 'Milestone ID'],
 				'assignees' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Usernames to assign'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'title'],
+			'required' => ['owner', 'repo', 'title', 'instance', 'user'],
 		]
 	)]
-	public function create_issue(string $owner, string $repo, string $title, string $body = '', ?array $labels = null, ?int $milestone = null, ?array $assignees = null, ?string $instance = null, ?string $user = null): array
+	public function create_issue(string $owner, string $repo, string $title, string $body = '', ?array $labels = null, ?int $milestone = null, ?array $assignees = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$data = ['title' => $title];
@@ -116,13 +116,13 @@ class IssueTools
 				'state' => ['type' => 'string', 'description' => 'New state: open or closed'],
 				'milestone' => ['type' => 'integer', 'description' => 'Milestone ID (0 to clear)'],
 				'assignees' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Assignee usernames'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'index'],
+			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
 	)]
-	public function update_issue(string $owner, string $repo, int $index, ?string $title = null, ?string $body = null, ?string $state = null, ?int $milestone = null, ?array $assignees = null, ?string $instance = null, ?string $user = null): array
+	public function update_issue(string $owner, string $repo, int $index, ?string $title = null, ?string $body = null, ?string $state = null, ?int $milestone = null, ?array $assignees = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$data = [];
@@ -144,13 +144,13 @@ class IssueTools
 				'repo' => ['type' => 'string', 'description' => 'Repository name'],
 				'index' => ['type' => 'integer', 'description' => 'Issue index number'],
 				'state' => ['type' => 'string', 'description' => 'New state: open or closed'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'index', 'state'],
+			'required' => ['owner', 'repo', 'index', 'state', 'instance', 'user'],
 		]
 	)]
-	public function issue_state_change(string $owner, string $repo, int $index, string $state, ?string $instance = null, ?string $user = null): array
+	public function issue_state_change(string $owner, string $repo, int $index, string $state, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->patch("repos/{$owner}/{$repo}/issues/{$index}", ['state' => $state]);

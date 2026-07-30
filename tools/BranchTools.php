@@ -31,13 +31,13 @@ class BranchTools
 				'repo' => ['type' => 'string', 'description' => 'Repository name'],
 				'page' => ['type' => 'integer', 'description' => 'Page number (default 1)'],
 				'limit' => ['type' => 'integer', 'description' => 'Results per page (default 20)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo'],
+			'required' => ['owner', 'repo', 'instance', 'user'],
 		]
 	)]
-	public function list_branches(string $owner, string $repo, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
+	public function list_branches(string $owner, string $repo, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/branches", ['page' => $page, 'limit' => $limit]);
@@ -53,13 +53,13 @@ class BranchTools
 				'repo' => ['type' => 'string', 'description' => 'Repository name'],
 				'new_branch_name' => ['type' => 'string', 'description' => 'Name for the new branch'],
 				'old_branch_name' => ['type' => 'string', 'description' => 'Branch to create from (optional, defaults to default branch)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'new_branch_name'],
+			'required' => ['owner', 'repo', 'new_branch_name', 'instance', 'user'],
 		]
 	)]
-	public function create_branch(string $owner, string $repo, string $new_branch_name, ?string $old_branch_name = null, ?string $instance = null, ?string $user = null): array
+	public function create_branch(string $owner, string $repo, string $new_branch_name, ?string $old_branch_name = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$data = ['new_branch_name' => $new_branch_name];
@@ -76,13 +76,13 @@ class BranchTools
 				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
 				'repo' => ['type' => 'string', 'description' => 'Repository name'],
 				'branch' => ['type' => 'string', 'description' => 'Branch name to delete'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'branch'],
+			'required' => ['owner', 'repo', 'branch', 'instance', 'user'],
 		]
 	)]
-	public function delete_branch(string $owner, string $repo, string $branch, ?string $instance = null, ?string $user = null): array
+	public function delete_branch(string $owner, string $repo, string $branch, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->delete("repos/{$owner}/{$repo}/branches/{$branch}");

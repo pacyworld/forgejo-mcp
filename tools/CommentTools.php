@@ -32,13 +32,13 @@ class CommentTools
 				'index' => ['type' => 'integer', 'description' => 'Issue index number'],
 				'page' => ['type' => 'integer', 'description' => 'Page number'],
 				'limit' => ['type' => 'integer', 'description' => 'Results per page'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'index'],
+			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
 	)]
-	public function list_issue_comments(string $owner, string $repo, int $index, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
+	public function list_issue_comments(string $owner, string $repo, int $index, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/issues/{$index}/comments", ['page' => $page, 'limit' => $limit]);
@@ -54,13 +54,13 @@ class CommentTools
 				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
 				'repo' => ['type' => 'string', 'description' => 'Repository name'],
 				'id' => ['type' => 'integer', 'description' => 'Comment ID'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'id'],
+			'required' => ['owner', 'repo', 'id', 'instance', 'user'],
 		]
 	)]
-	public function get_issue_comment(string $owner, string $repo, int $id, ?string $instance = null, ?string $user = null): array
+	public function get_issue_comment(string $owner, string $repo, int $id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/issues/comments/{$id}");
@@ -76,13 +76,13 @@ class CommentTools
 				'repo' => ['type' => 'string', 'description' => 'Repository name'],
 				'index' => ['type' => 'integer', 'description' => 'Issue index number'],
 				'body' => ['type' => 'string', 'description' => 'Comment body (Markdown)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'index', 'body'],
+			'required' => ['owner', 'repo', 'index', 'body', 'instance', 'user'],
 		]
 	)]
-	public function create_issue_comment(string $owner, string $repo, int $index, string $body, ?string $instance = null, ?string $user = null): array
+	public function create_issue_comment(string $owner, string $repo, int $index, string $body, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->post("repos/{$owner}/{$repo}/issues/{$index}/comments", ['body' => $body]);
@@ -98,13 +98,13 @@ class CommentTools
 				'repo' => ['type' => 'string', 'description' => 'Repository name'],
 				'id' => ['type' => 'integer', 'description' => 'Comment ID'],
 				'body' => ['type' => 'string', 'description' => 'New comment body'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'id', 'body'],
+			'required' => ['owner', 'repo', 'id', 'body', 'instance', 'user'],
 		]
 	)]
-	public function edit_issue_comment(string $owner, string $repo, int $id, string $body, ?string $instance = null, ?string $user = null): array
+	public function edit_issue_comment(string $owner, string $repo, int $id, string $body, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->patch("repos/{$owner}/{$repo}/issues/comments/{$id}", ['body' => $body]);
@@ -119,13 +119,13 @@ class CommentTools
 				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
 				'repo' => ['type' => 'string', 'description' => 'Repository name'],
 				'id' => ['type' => 'integer', 'description' => 'Comment ID'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'id'],
+			'required' => ['owner', 'repo', 'id', 'instance', 'user'],
 		]
 	)]
-	public function delete_issue_comment(string $owner, string $repo, int $id, ?string $instance = null, ?string $user = null): array
+	public function delete_issue_comment(string $owner, string $repo, int $id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->delete("repos/{$owner}/{$repo}/issues/comments/{$id}");

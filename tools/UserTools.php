@@ -30,13 +30,13 @@ class UserTools
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => [],
+			'required' => ['instance', 'user'],
 		]
 	)]
-	public function get_my_user_info(?string $instance = null, ?string $user = null): array
+	public function get_my_user_info(string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get('user');
@@ -55,13 +55,13 @@ class UserTools
 				'q' => ['type' => 'string', 'description' => 'Search query (username or email)'],
 				'limit' => ['type' => 'integer', 'description' => 'Maximum results to return (default 10)'],
 				'page' => ['type' => 'integer', 'description' => 'Page number (default 1)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['q'],
+			'required' => ['q', 'instance', 'user'],
 		]
 	)]
-	public function search_users(string $q, int $limit = 10, int $page = 1, ?string $instance = null, ?string $user = null): array
+	public function search_users(string $q, int $limit = 10, int $page = 1, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get('users/search', ['q' => $q, 'limit' => $limit, 'page' => $page]);

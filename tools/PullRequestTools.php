@@ -34,13 +34,13 @@ class PullRequestTools
 				'labels' => ['type' => 'string', 'description' => 'Comma-separated label IDs'],
 				'page' => ['type' => 'integer', 'description' => 'Page number'],
 				'limit' => ['type' => 'integer', 'description' => 'Results per page'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo'],
+			'required' => ['owner', 'repo', 'instance', 'user'],
 		]
 	)]
-	public function list_repo_pull_requests(string $owner, string $repo, string $state = 'open', ?string $sort = null, ?string $labels = null, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
+	public function list_repo_pull_requests(string $owner, string $repo, string $state = 'open', ?string $sort = null, ?string $labels = null, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$query = ['state' => $state, 'page' => $page, 'limit' => $limit];
@@ -59,13 +59,13 @@ class PullRequestTools
 				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
 				'repo' => ['type' => 'string', 'description' => 'Repository name'],
 				'index' => ['type' => 'integer', 'description' => 'PR index number'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'index'],
+			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
 	)]
-	public function get_pull_request_by_index(string $owner, string $repo, int $index, ?string $instance = null, ?string $user = null): array
+	public function get_pull_request_by_index(string $owner, string $repo, int $index, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/pulls/{$index}");
@@ -86,13 +86,13 @@ class PullRequestTools
 				'labels' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Label IDs'],
 				'milestone' => ['type' => 'integer', 'description' => 'Milestone ID'],
 				'assignees' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Assignee usernames'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'title', 'head', 'base'],
+			'required' => ['owner', 'repo', 'title', 'head', 'base', 'instance', 'user'],
 		]
 	)]
-	public function create_pull_request(string $owner, string $repo, string $title, string $head, string $base, string $body = '', ?array $labels = null, ?int $milestone = null, ?array $assignees = null, ?string $instance = null, ?string $user = null): array
+	public function create_pull_request(string $owner, string $repo, string $title, string $head, string $base, string $body = '', ?array $labels = null, ?int $milestone = null, ?array $assignees = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$data = ['title' => $title, 'head' => $head, 'base' => $base];
@@ -116,13 +116,13 @@ class PullRequestTools
 				'body' => ['type' => 'string', 'description' => 'New body'],
 				'state' => ['type' => 'string', 'description' => 'New state: open or closed'],
 				'base' => ['type' => 'string', 'description' => 'New base branch'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'index'],
+			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
 	)]
-	public function update_pull_request(string $owner, string $repo, int $index, ?string $title = null, ?string $body = null, ?string $state = null, ?string $base = null, ?string $instance = null, ?string $user = null): array
+	public function update_pull_request(string $owner, string $repo, int $index, ?string $title = null, ?string $body = null, ?string $state = null, ?string $base = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$data = [];
@@ -145,13 +145,13 @@ class PullRequestTools
 				'Do' => ['type' => 'string', 'description' => 'Merge method: merge, rebase, rebase-merge, squash, manually-merged'],
 				'merge_message_field' => ['type' => 'string', 'description' => 'Merge commit message'],
 				'delete_branch_after_merge' => ['type' => 'boolean', 'description' => 'Delete head branch after merge'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'index', 'Do'],
+			'required' => ['owner', 'repo', 'index', 'Do', 'instance', 'user'],
 		]
 	)]
-	public function merge_pull_request(string $owner, string $repo, int $index, string $Do, ?string $merge_message_field = null, bool $delete_branch_after_merge = false, ?string $instance = null, ?string $user = null): array
+	public function merge_pull_request(string $owner, string $repo, int $index, string $Do, ?string $merge_message_field = null, bool $delete_branch_after_merge = false, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$data = ['Do' => $Do, 'delete_branch_after_merge' => $delete_branch_after_merge];
@@ -171,13 +171,13 @@ class PullRequestTools
 				'index' => ['type' => 'integer', 'description' => 'PR index number'],
 				'page' => ['type' => 'integer', 'description' => 'Page number'],
 				'limit' => ['type' => 'integer', 'description' => 'Results per page'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'index'],
+			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
 	)]
-	public function list_pull_request_files(string $owner, string $repo, int $index, int $page = 1, int $limit = 50, ?string $instance = null, ?string $user = null): array
+	public function list_pull_request_files(string $owner, string $repo, int $index, int $page = 1, int $limit = 50, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/pulls/{$index}/files", ['page' => $page, 'limit' => $limit]);
@@ -193,13 +193,13 @@ class PullRequestTools
 				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
 				'repo' => ['type' => 'string', 'description' => 'Repository name'],
 				'index' => ['type' => 'integer', 'description' => 'PR index number'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo', 'index'],
+			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
 	)]
-	public function get_pull_request_diff(string $owner, string $repo, int $index, ?string $instance = null, ?string $user = null): string
+	public function get_pull_request_diff(string $owner, string $repo, int $index, string $instance = '', string $user = ''): string
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->getRaw("repos/{$owner}/{$repo}/pulls/{$index}.diff");

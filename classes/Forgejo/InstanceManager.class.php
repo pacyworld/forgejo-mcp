@@ -39,19 +39,10 @@ class InstanceManager
 	 * @param string               $defaultUser     Default user name
 	 * @param callable|null        $httpClient      Optional HTTP callable for testing
 	 */
-	public function __construct(array $instances, string $defaultInstance, string $defaultUser, ?callable $httpClient = null)
+	public function __construct(array $instances, string $defaultInstance = '', string $defaultUser = '', ?callable $httpClient = null)
 	{
 		if (empty($instances)) {
 			throw new \InvalidArgumentException('At least one Forgejo instance must be configured.');
-		}
-
-		if (!isset($instances[$defaultInstance])) {
-			throw new \InvalidArgumentException("Default instance '{$defaultInstance}' not found in configuration.");
-		}
-
-		$users = $instances[$defaultInstance]['users'] ?? [];
-		if (!isset($users[$defaultUser])) {
-			throw new \InvalidArgumentException("Default user '{$defaultUser}' not found in instance '{$defaultInstance}'.");
 		}
 
 		$this->instances = $instances;
@@ -89,28 +80,25 @@ class InstanceManager
 		$defaultInstance = $config['default_instance'] ?? '';
 		$defaultUser = $config['default_user'] ?? '';
 
-		if (empty($defaultInstance) && !empty($instances)) {
-			$defaultInstance = array_key_first($instances);
-		}
-
-		if (empty($defaultUser) && !empty($instances[$defaultInstance]['users'] ?? [])) {
-			$defaultUser = array_key_first($instances[$defaultInstance]['users']);
-		}
-
 		return new self($instances, $defaultInstance, $defaultUser, $httpClient);
 	}
 
 	/**
-	 * Get a Client for the specified instance and user (or defaults).
+	 * Get a Client for the specified instance and user.
 	 *
-	 * @param  string|null $instance Instance name (null = default)
-	 * @param  string|null $user     User name (null = default for that instance)
-	 * @return Client                Forgejo API client
+	 * @param  string $instance Instance name (required)
+	 * @param  string $user     User name (required)
+	 * @return Client             Forgejo API client
+	 * @throws \InvalidArgumentException If instance/user not found or empty
 	 */
-	public function getClient(?string $instance = null, ?string $user = null): Client
+	public function getClient(string $instance, string $user): Client
 	{
-		$instance = $instance ?: $this->defaultInstance;
-		$user = $user ?: ($instance === $this->defaultInstance ? $this->defaultUser : null);
+		if (empty($instance)) {
+			throw new \InvalidArgumentException('Instance name is required. Pass the instance parameter to every tool call.');
+		}
+		if (empty($user)) {
+			throw new \InvalidArgumentException('User name is required. Pass the user parameter to every tool call.');
+		}
 
 		if (!isset($this->instances[$instance])) {
 			$available = implode(', ', array_keys($this->instances));
@@ -121,10 +109,6 @@ class InstanceManager
 
 		$instanceConfig = $this->instances[$instance];
 		$users = $instanceConfig['users'] ?? [];
-
-		if ($user === null && !empty($users)) {
-			$user = array_key_first($users);
-		}
 
 		if (!isset($users[$user])) {
 			$available = implode(', ', array_keys($users));
@@ -167,7 +151,6 @@ class InstanceManager
 			$result[$name] = [
 				'url' => $config['url'],
 				'description' => $config['description'] ?? '',
-				'is_default' => ($name === $this->defaultInstance),
 				'users' => $users,
 			];
 		}

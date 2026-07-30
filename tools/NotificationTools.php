@@ -30,13 +30,13 @@ class NotificationTools
 				'status_types' => ['type' => 'string', 'description' => 'Filter: unread, read, pinned (comma-separated)'],
 				'page' => ['type' => 'integer', 'description' => 'Page number'],
 				'limit' => ['type' => 'integer', 'description' => 'Results per page'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => [],
+			'required' => ['instance', 'user'],
 		]
 	)]
-	public function check_notifications(?string $status_types = null, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
+	public function check_notifications(?string $status_types = null, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$query = ['page' => $page, 'limit' => $limit];
@@ -52,13 +52,13 @@ class NotificationTools
 			'type' => 'object',
 			'properties' => [
 				'id' => ['type' => 'integer', 'description' => 'Notification thread ID'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['id'],
+			'required' => ['id', 'instance', 'user'],
 		]
 	)]
-	public function get_notification_thread(int $id, ?string $instance = null, ?string $user = null): array
+	public function get_notification_thread(int $id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("notifications/threads/{$id}");
@@ -71,13 +71,13 @@ class NotificationTools
 			'type' => 'object',
 			'properties' => [
 				'id' => ['type' => 'integer', 'description' => 'Notification thread ID'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['id'],
+			'required' => ['id', 'instance', 'user'],
 		]
 	)]
-	public function mark_notification_read(int $id, ?string $instance = null, ?string $user = null): array
+	public function mark_notification_read(int $id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->patch("notifications/threads/{$id}", ['status' => 'read']);
@@ -89,13 +89,13 @@ class NotificationTools
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => [],
+			'required' => ['instance', 'user'],
 		]
 	)]
-	public function mark_all_notifications_read(?string $instance = null, ?string $user = null): array
+	public function mark_all_notifications_read(string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->put('notifications', ['status' => 'read']);
@@ -113,13 +113,13 @@ class NotificationTools
 				'status_types' => ['type' => 'string', 'description' => 'Filter: unread, read, pinned'],
 				'page' => ['type' => 'integer', 'description' => 'Page number'],
 				'limit' => ['type' => 'integer', 'description' => 'Results per page'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo'],
+			'required' => ['owner', 'repo', 'instance', 'user'],
 		]
 	)]
-	public function list_repo_notifications(string $owner, string $repo, ?string $status_types = null, int $page = 1, int $limit = 20, ?string $instance = null, ?string $user = null): array
+	public function list_repo_notifications(string $owner, string $repo, ?string $status_types = null, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$query = ['page' => $page, 'limit' => $limit];
@@ -135,13 +135,13 @@ class NotificationTools
 			'properties' => [
 				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
 				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name (optional)'],
-				'user' => ['type' => 'string', 'description' => 'User identity (optional)'],
+				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
+				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
-			'required' => ['owner', 'repo'],
+			'required' => ['owner', 'repo', 'instance', 'user'],
 		]
 	)]
-	public function mark_repo_notifications_read(string $owner, string $repo, ?string $instance = null, ?string $user = null): array
+	public function mark_repo_notifications_read(string $owner, string $repo, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->put("repos/{$owner}/{$repo}/notifications", ['status' => 'read']);

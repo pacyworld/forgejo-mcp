@@ -109,4 +109,61 @@ class ClientTest extends TestCase
 		$client = $this->makeClient(fn() => ['code' => 200, 'body' => '{}']);
 		$this->assertEquals('https://example.com', $client->getBaseUrl());
 	}
+
+	public function testGetServerVersion(): void
+	{
+		$client = $this->makeClient(function ($method, $url) {
+			$this->assertStringContainsString('api/v1/version', $url);
+			return ['code' => 200, 'body' => '{"version":"16.0.2"}'];
+		});
+		$this->assertEquals('16.0.2', $client->getServerVersion());
+	}
+
+	public function testGetServerVersionIsCached(): void
+	{
+		$calls = 0;
+		$client = $this->makeClient(function () use (&$calls) {
+			$calls++;
+			return ['code' => 200, 'body' => '{"version":"16.0.2"}'];
+		});
+		$this->assertEquals('16.0.2', $client->getServerVersion());
+		$this->assertEquals('16.0.2', $client->getServerVersion());
+		$this->assertEquals(1, $calls);
+	}
+
+	public function testGetServerVersionFailureReturnsEmpty(): void
+	{
+		$client = $this->makeClient(fn() => ['code' => 500, 'body' => 'Internal Server Error']);
+		$this->assertEquals('', $client->getServerVersion());
+		$this->assertFalse($client->versionAtLeast('16.0.0'));
+	}
+
+	public function testVersionAtLeast(): void
+	{
+		$v16 = $this->makeClient(fn() => ['code' => 200, 'body' => '{"version":"16.0.0"}']);
+		$this->assertTrue($v16->versionAtLeast('16.0.0'));
+		$this->assertTrue($v16->versionAtLeast('15.0.0'));
+
+		$v11 = $this->makeClient(fn() => ['code' => 200, 'body' => '{"version":"11.0.3"}']);
+		$this->assertFalse($v11->versionAtLeast('16.0.0'));
+		$this->assertTrue($v11->versionAtLeast('11.0.0'));
+	}
+
+	public function testVersionWithBuildMetadata(): void
+	{
+		$client = $this->makeClient(fn() => ['code' => 200, 'body' => '{"version":"16.0.1+gitea-1.24.6"}']);
+		$this->assertTrue($client->versionAtLeast('16.0.0'));
+	}
+
+	public function testSupportsActionLogsApi(): void
+	{
+		$supported = $this->makeClient(fn() => ['code' => 200, 'body' => '{"version":"16.0.0"}']);
+		$this->assertTrue($supported->supportsActionLogsApi());
+
+		$unsupported = $this->makeClient(fn() => ['code' => 200, 'body' => '{"version":"15.9.9"}']);
+		$this->assertFalse($unsupported->supportsActionLogsApi());
+
+		$unknown = $this->makeClient(fn() => ['code' => 200, 'body' => '{}']);
+		$this->assertFalse($unknown->supportsActionLogsApi());
+	}
 }

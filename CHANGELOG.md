@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.1.0 — 2026-08-07
+
+### Added
+- **Forgejo 16 action log download API** support (upstream PR forgejo/forgejo#12666):
+  - `get_action_job_logs` — plaintext logs of a single job by job ID, with optional 1-based `attempt` (latest when omitted). Works for public and private repositories via API token.
+  - `download_action_run_logs` — logs for every job in a run (server-side ZIP). Entries are extracted inline when the PHP zip extension is available on the MCP host, otherwise the archive is returned base64-encoded. Jobs that have not started or whose logs expired are flagged `missing`.
+  - Both tools check the connected server version first and return a structured error (`detected_version`, `required_version`, `workaround`) on servers older than Forgejo 16.0 instead of calling endpoints that do not exist.
+- `list_workflow_run_jobs` — list jobs of a workflow run (id, name, status, attempt). Provides the job IDs required by `get_action_job_logs`.
+- `get_forgejo_version` — report the connected instance's Forgejo version and which version-gated API features it supports.
+- `Client::getServerVersion()`, `Client::versionAtLeast()`, `Client::supportsActionLogsApi()` — cached server-version detection via `GET /api/v1/version`.
+
+### Changed
+- `get_workflow_job_logs` now uses the Forgejo 16+ REST API when the connected server supports it (job index is resolved to a job ID via the run jobs listing, enabling API-token log access for private repositories). On older servers it keeps the legacy web-route behavior; its 404 guidance now points at the Forgejo 16 upgrade path.
+
+### Fixed
+- docs/TOOLS.md documented a non-existent `get_workflow_run_jobs` tool; replaced with the actual `list_workflow_run_jobs`.
+
 ## v1.0.2 — 2026-06-30
 
 ### Added

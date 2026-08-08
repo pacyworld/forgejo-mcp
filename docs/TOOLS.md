@@ -10,6 +10,7 @@ All tools accept optional `instance` and `user` parameters to target a specific 
 | `forgejo_switch_instance` | Switch the active Forgejo instance |
 | `forgejo_switch_user` | Switch the active user within the current instance |
 | `get_forgejo_mcp_server_version` | Get MCP server name and version |
+| `get_forgejo_version` | Get the Forgejo server version and supported version-gated API features |
 
 ## User
 
@@ -157,8 +158,20 @@ All three attachment scopes (issue, comment, release) support the same operation
 | `dispatch_workflow` | Trigger a workflow run |
 | `list_workflow_runs` | List runs with status filter |
 | `get_workflow_run` | Get run details |
-| `get_workflow_run_jobs` | List jobs in a run |
-| `get_workflow_job_logs` | Download job logs (plain text) |
+| `list_workflow_run_jobs` | List jobs in a run (id, name, status, attempt) |
+| `get_workflow_job_logs` | Download job logs by run ID + job index (API on Forgejo 16+, legacy web route below) |
+| `get_action_job_logs` | Download plaintext logs of a single job by job ID (Forgejo 16+, structured error on older servers) |
+| `download_action_run_logs` | Download logs for every job in a run (Forgejo 16+, structured error on older servers) |
+
+`get_action_job_logs` and `download_action_run_logs` use the REST log download endpoints added in
+Forgejo 16.0 (`GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs` and
+`GET /repos/{owner}/{repo}/actions/runs/{run_id}/logs`), which accept API tokens for public and
+private repositories. Both check the connected server's version first; on servers older than
+Forgejo 16 they return a structured error (`detected_version`, `required_version`, `workaround`)
+instead of hitting endpoints that do not exist. `download_action_run_logs` extracts the server's
+ZIP inline when the PHP zip extension is available on the MCP host, otherwise returns the archive
+base64-encoded. Jobs that have not started or whose logs expired appear as entries with
+`missing: true`.
 
 ## Action Secrets
 

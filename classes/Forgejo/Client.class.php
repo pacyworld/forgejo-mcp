@@ -15,6 +15,9 @@ namespace Forgejo;
 
 class Client
 {
+	/** Minimum Forgejo version exposing the action log download REST API */
+	public const ACTION_LOGS_API_MIN_VERSION = '16.0.0';
+
 	/** @var string Base URL of the Forgejo instance */
 	private string $baseUrl;
 
@@ -29,6 +32,9 @@ class Client
 
 	/** @var callable|null Optional HTTP callable for testing */
 	private $httpClient;
+
+	/** @var string|null Cached server version (null = not yet fetched) */
+	private ?string $serverVersion = null;
 
 	/**
 	 * Create a new Forgejo API client.
@@ -223,6 +229,58 @@ class Client
 	public function getBaseUrl(): string
 	{
 		return $this->baseUrl;
+	}
+
+	/**
+	 * Get the Forgejo server version string (cached per client).
+	 *
+	 * Uses GET /api/v1/version which exists on all Forgejo versions.
+	 * Returns an empty string when the version cannot be determined;
+	 * callers must treat an unknown version as "feature unsupported".
+	 *
+	 * @param  bool $refresh Force a fresh lookup
+	 * @return string        Version string (e.g. "16.0.0"), or '' on failure
+	 */
+	public function getServerVersion(bool $refresh = false): string
+	{
+		if ($this->serverVersion === null || $refresh) {
+			$this->serverVersion = '';
+			try {
+				$result = $this->get('version');
+				if (isset($result['version']) && is_string($result['version'])) {
+					$this->serverVersion = $result['version'];
+				}
+			} catch (ClientException $e) {
+				// Leave empty — callers treat an unknown version as unsupported
+			}
+		}
+		return $this->serverVersion;
+	}
+
+	/**
+	 * Check whether the connected server runs at least the given version.
+	 *
+	 * @param  string $minimum Minimum version (e.g. "16.0.0")
+	 * @return bool            false when the server version is unknown or unparseable
+	 */
+	public function versionAtLeast(string $minimum): bool
+	{
+		if (preg_match('/\d+(?:\.\d+)*/', $this->getServerVersion(), $m) !== 1) {
+			return false;
+		}
+		return version_compare($m[0], $minimum, '>=');
+	}
+
+	/**
+	 * Whether the server exposes the Forgejo 16+ action log download API
+	 * (GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs and
+	 * GET /repos/{owner}/{repo}/actions/runs/{run_id}/logs).
+	 *
+	 * @return bool
+	 */
+	public function supportsActionLogsApi(): bool
+	{
+		return $this->versionAtLeast(self::ACTION_LOGS_API_MIN_VERSION);
 	}
 
 	/**

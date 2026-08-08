@@ -10,7 +10,7 @@ Key capabilities:
 - Branch management (create, delete, list)
 - Release management (create, edit, delete, attachments)
 - Notifications (check, mark read)
-- Workflow/Actions (dispatch, list runs, get run status)
+- Workflow/Actions (dispatch, list runs/jobs, download job/run logs — log download via REST API requires Forgejo 16+; tools detect the server version and degrade gracefully)
 - Time tracking (add time, stopwatch, tracked times)
 - Organization teams (search)
 

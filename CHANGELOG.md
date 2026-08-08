@@ -2,6 +2,10 @@
 
 ## v1.1.0 — 2026-08-07
 
+### Upgrade Notes
+- **Install the PHP zip extension (`pecl-zip`) on the host running this MCP server** — recommended when upgrading. `download_action_run_logs` extracts the server's per-run log ZIP inline only when `ext-zip` is available; without it the tool still works but returns the archive base64-encoded instead of per-job log text. On FreeBSD: `pkg install php84-zip` (adjust for your PHP version; on some versions the package is `php84-pecl-zip`). No other changes are required — the feature degrades gracefully.
+- No configuration changes needed; existing `instances.json` files work unchanged.
+
 ### Added
 - **Forgejo 16 action log download API** support (upstream PR forgejo/forgejo#12666):
   - `get_action_job_logs` — plaintext logs of a single job by job ID, with optional 1-based `attempt` (latest when omitted). Works for public and private repositories via API token.

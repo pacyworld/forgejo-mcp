@@ -169,4 +169,28 @@ class InstanceManagerTest extends TestCase
 		$manager = new InstanceManager($this->sampleConfig(), 'pacyworld', 'admin');
 		$this->assertEquals(2, $manager->count());
 	}
+
+	public function testLoggerPropagatesToClients(): void
+	{
+		$logFile = tempnam(sys_get_temp_dir(), 'forgejo-mcp-mgr-log-test-');
+		$logger = new \EnchiladaMCP\Logger($logFile, \EnchiladaMCP\Logger::LEVEL_DEBUG, false, 'test');
+
+		$manager = new InstanceManager(
+			$this->sampleConfig(),
+			'pacyworld',
+			'admin',
+			fn() => ['code' => 200, 'body' => '{"login":"testuser"}']
+		);
+		$manager->setLogger($logger);
+
+		$client = $manager->getClient('pacyworld', 'admin');
+		$client->get('user');
+
+		$log = file_get_contents($logFile);
+		unlink($logFile);
+
+		$this->assertStringContainsString('Created client for pacyworld:admin (https://pacyworld.dev', $log);
+		$this->assertStringContainsString('HTTP GET https://pacyworld.dev/api/v1/user', $log);
+		$this->assertStringNotContainsString('token-admin', $log);
+	}
 }

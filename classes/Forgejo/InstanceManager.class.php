@@ -31,6 +31,9 @@ class InstanceManager
 	/** @var callable|null Optional HTTP client callable for testing */
 	private $httpClient;
 
+	/** @var \EnchiladaMCP\Logger|null Optional logger propagated to created Clients */
+	private ?\EnchiladaMCP\Logger $logger = null;
+
 	/**
 	 * Create a new InstanceManager.
 	 *
@@ -84,6 +87,16 @@ class InstanceManager
 	}
 
 	/**
+	 * Set a logger propagated to every Client created by this manager.
+	 *
+	 * @param \EnchiladaMCP\Logger|null $logger Logger instance, or null to disable
+	 */
+	public function setLogger(?\EnchiladaMCP\Logger $logger): void
+	{
+		$this->logger = $logger;
+	}
+
+	/**
 	 * Get a Client for the specified instance and user.
 	 *
 	 * @param  string $instance Instance name (required)
@@ -127,6 +140,10 @@ class InstanceManager
 				$instanceConfig['timeout'] ?? 30,
 				$this->httpClient
 			);
+			$this->clients[$cacheKey]->setLogger($this->logger);
+			if ($this->logger !== null) {
+				$this->logger->debug("Created client for {$cacheKey} ({$instanceConfig['url']}, timeout=" . ($instanceConfig['timeout'] ?? 30) . 's, verify_ssl=' . (($instanceConfig['verify_ssl'] ?? true) ? 'true' : 'false') . ')');
+			}
 		}
 
 		return $this->clients[$cacheKey];

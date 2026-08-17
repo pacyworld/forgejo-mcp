@@ -166,4 +166,82 @@ class ClientTest extends TestCase
 		$unknown = $this->makeClient(fn() => ['code' => 200, 'body' => '{}']);
 		$this->assertFalse($unknown->supportsActionLogsApi());
 	}
+
+	private function makeFileLogger(?string &$logFile): \EnchiladaMCP\Logger
+	{
+		$logFile = tempnam(sys_get_temp_dir(), 'forgejo-mcp-client-log-test-');
+		return new \EnchiladaMCP\Logger($logFile, \EnchiladaMCP\Logger::LEVEL_DEBUG, false, 'test');
+	}
+
+	public function testRequestLogging(): void
+	{
+		$client = $this->makeClient(fn() => ['code' => 200, 'body' => '{"login":"testuser"}']);
+		$client->setLogger($this->makeFileLogger($logFile));
+
+		$client->get('user');
+
+		$log = file_get_contents($logFile);
+		unlink($logFile);
+
+		$this->assertStringContainsString('HTTP GET https://example.com/api/v1/user', $log);
+		$this->assertStringContainsString('-> 200 in', $log);
+		$this->assertStringNotContainsString('test-token', $log);
+	}
+
+	public function testRequestLoggingDigestsBodyWithoutValue(): void
+	{
+		$client = $this->makeClient(fn() => ['code' => 201, 'body' => '{"id":1}']);
+		$client->setLogger($this->makeFileLogger($logFile));
+
+		$client->post('user/repos', ['name' => 'super-secret-value']);
+
+		$log = file_get_contents($logFile);
+		unlink($logFile);
+
+		$expectedBody = json_encode(['name' => 'super-secret-value']);
+		$this->assertStringContainsString('body(len=' . strlen($expectedBody) . ' sha256=' . hash('sha256', $expectedBody) . ')', $log);
+		$this->assertStringNotContainsString('super-secret-value', $log);
+	}
+
+	public function testErrorLogging(): void
+	{
+		$client = $this->makeClient(fn() => ['code' => 500, 'body' => '{"message":"boom"}']);
+		$client->setLogger($this->makeFileLogger($logFile));
+
+		try {
+			$client->get('user');
+			$this->fail('Expected ClientException');
+		} catch (ClientException $e) {
+			// expected
+		}
+
+		$log = file_get_contents($logFile);
+		unlink($logFile);
+
+		$this->assertStringContainsString('[ERROR]', $log);
+		$this->assertStringContainsString('HTTP GET https://example.com/api/v1/user failed after', $log);
+		$this->assertStringContainsString('500', $log);
+	}
+
+	public function testUrlTokenRedaction(): void
+	{
+		$client = $this->makeClient(fn() => ['code' => 200, 'body' => '{}']);
+		$client->setLogger($this->makeFileLogger($logFile));
+
+		$client->get('user', ['token' => 'abc123secret', 'page' => 2]);
+
+		$log = file_get_contents($logFile);
+		unlink($logFile);
+
+		$this->assertStringContainsString('token=[REDACTED]', $log);
+		$this->assertStringNotContainsString('abc123secret', $log);
+		$this->assertStringContainsString('page=2', $log);
+	}
+
+	public function testNoLoggerMeansNoOutput(): void
+	{
+		$client = $this->makeClient(fn() => ['code' => 200, 'body' => '{"login":"testuser"}']);
+		$result = $client->get('user');
+		$this->assertEquals('testuser', $result['login']);
+	}
 }

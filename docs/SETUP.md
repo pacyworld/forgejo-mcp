@@ -124,6 +124,43 @@ Use the instance management tools without restarting:
 
 All other tools accept optional `instance` and `user` parameters to override the default for a single call.
 
+## Logging
+
+Durable diagnostic logging is available via environment variables or CLI flags. This is the primary tool for pinpointing protocol, transport, or API problems — stdout is reserved for the JSON-RPC protocol and most MCP hosts capture stderr only transiently.
+
+| Environment variable    | CLI flag            | Default | Purpose                                            |
+|-------------------------|---------------------|---------|----------------------------------------------------|
+| `FORGEJO_MCP_LOG`       | `--log=PATH`        | off     | Log file path (enables durable file logging)       |
+| `FORGEJO_MCP_LOG_LEVEL` | `--log-level=LEVEL` | `debug` | Minimum level: `debug`, `info`, or `error`         |
+| `FORGEJO_MCP_LOG_STDERR`| —                   | on      | Mirror log lines to stderr (`0` disables)          |
+
+Example MCP host configuration with logging enabled:
+
+```json
+{
+    "mcpServers": {
+        "forgejo": {
+            "command": "php",
+            "args": ["/path/to/forgejo-mcp.phar", "--config=/path/to/instances.json"],
+            "env": {
+                "FORGEJO_MCP_LOG": "/home/admin/.config/forgejo-mcp/forgejo-mcp.log",
+                "FORGEJO_MCP_LOG_LEVEL": "debug",
+                "FORGEJO_MCP_LOG_STDERR": "0"
+            }
+        }
+    }
+}
+```
+
+What is logged at `debug` level:
+
+- **Lifecycle** — startup (version, pid, PHP version), config file used, tool registration, shutdown.
+- **Transport** — every inbound/outbound JSON-RPC line with byte length, SHA-256 digest, and a 200-character preview; invalid JSON; stdout write failures; EOF.
+- **Protocol** — every request with method, id, tool name, per-argument digests, duration in ms, and outcome (OK / tool error / exception).
+- **HTTP** — every Forgejo API call with method, URL, body digest, status code, and duration; errors include the failure reason.
+
+Privacy: secrets and tokens are **never** written to the log. Request/response bodies and string arguments are reduced to `len=N sha256=...` digests (byte-exactness can still be verified by comparing digests), Authorization headers are never logged, and `token=`/`access_token=` URL parameters are redacted.
+
 ## Troubleshooting
 
 ### "No configuration file found"

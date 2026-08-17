@@ -10,7 +10,15 @@
  *   php bin/forgejo-mcp
  *
  * Environment:
- *   FORGEJO_MCP_CONFIG  Path to instances.json configuration file
+ *   FORGEJO_MCP_CONFIG      Path to instances.json configuration file
+ *   FORGEJO_MCP_LOG         Path to a log file (enables durable file logging)
+ *   FORGEJO_MCP_LOG_LEVEL   debug|info|error (default: debug when a log file is set)
+ *   FORGEJO_MCP_LOG_STDERR  Mirror log lines to STDERR (default: on; set to 0 to silence)
+ *
+ * CLI flags:
+ *   --config=PATH      Path to instances.json
+ *   --log=PATH         Log file path (overrides FORGEJO_MCP_LOG)
+ *   --log-level=LEVEL  debug|info|error
  *
  * @package    ForgejoMCP
  * @author     Daniel Morante
@@ -38,6 +46,7 @@ if (!empty($missing)) {
 	exit(1);
 }
 
+use EnchiladaMCP\Logger;
 use EnchiladaMCP\McpServer;
 use EnchiladaMCP\StdioTransport;
 use Forgejo\InstanceManager;
@@ -45,13 +54,26 @@ use Forgejo\InstanceManager;
 // --- Configuration ---
 
 $configPath = getenv('FORGEJO_MCP_CONFIG') ?: null;
+$logPath = getenv('FORGEJO_MCP_LOG') ?: null;
+$logLevel = getenv('FORGEJO_MCP_LOG_LEVEL') ?: 'debug';
+$stderrEnv = getenv('FORGEJO_MCP_LOG_STDERR');
+$logStderr = ($stderrEnv === false) ? true : (bool)$stderrEnv;
 
-// Check CLI argument: --config=/path/to/instances.json
+// Check CLI arguments: --config=/path/to/instances.json, --log=/path/to/file, --log-level=debug
 foreach ($argv ?? [] as $arg) {
 	if (str_starts_with($arg, '--config=')) {
 		$configPath = substr($arg, 9);
 	}
+	if (str_starts_with($arg, '--log=')) {
+		$logPath = substr($arg, 6);
+	}
+	if (str_starts_with($arg, '--log-level=')) {
+		$logLevel = substr($arg, 12);
+	}
 }
+
+$logLevelValue = Logger::levelFromString($logLevel) ?? Logger::LEVEL_DEBUG;
+$logger = new Logger($logPath, $logLevelValue, $logStderr, APPLICATION_SLUG);
 
 // Default config location
 if ($configPath === null) {
@@ -77,24 +99,31 @@ if ($configPath === null || !file_exists($configPath)) {
 
 // --- Bootstrap ---
 
-function debug(string $message): void
-{
-	fwrite(STDERR, "[forgejo-mcp] " . $message . "\n");
+if ($logPath !== null && @file_put_contents($logPath, '', FILE_APPEND) === false) {
+	fwrite(STDERR, "[forgejo-mcp] WARNING: Log file not writable: {$logPath}\n");
+	$logger = new Logger(null, $logLevelValue, $logStderr, APPLICATION_SLUG);
 }
+
+$logger->info(APPLICATION_NAME . ' ' . APPLICATION_VERSION . " starting (pid " . getmypid() . ", php " . PHP_VERSION . ')');
+$logger->info("Log file: " . ($logPath ?? '(disabled — set FORGEJO_MCP_LOG to enable)'));
 
 try {
 	$manager = InstanceManager::fromFile($configPath);
 } catch (\Exception $e) {
 	fwrite(STDERR, "[forgejo-mcp] ERROR: " . $e->getMessage() . "\n");
+	$logger->error('Configuration load failed: ' . $e->getMessage());
 	exit(1);
 }
 
+$manager->setLogger($logger);
+
 $instanceCount = $manager->count();
-debug("Loaded {$instanceCount} instance(s) from {$configPath}");
+$logger->info("Loaded {$instanceCount} instance(s) from {$configPath}");
 
 // --- Create MCP Server ---
 
 $server = new McpServer(APPLICATION_SLUG, APPLICATION_VERSION);
+$server->setLogger($logger);
 
 // Load instructions
 $instructionsFile = APPLICATION_CONFDIR . 'instructions.txt';
@@ -111,17 +140,17 @@ if (is_dir($toolDir)) {
 		require_once $toolDir . DIRECTORY_SEPARATOR . $entry;
 		if (class_exists($className, false)) {
 			$server->register(new $className($manager));
-			debug("Registered tools: {$className}");
+			$logger->debug("Registered tools: {$className}");
 		}
 	}
 }
 
-debug("MCP server started (stdio transport)");
+$logger->info("MCP server started (stdio transport)");
 
 // --- Run ---
 
 $transport = new StdioTransport($server);
-$transport->setLogger('debug');
+$transport->setLogger($logger);
 $transport->run();
 
-debug("MCP server stopped");
+$logger->info("MCP server stopped");

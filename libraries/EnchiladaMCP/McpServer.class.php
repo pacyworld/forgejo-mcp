@@ -35,6 +35,9 @@ class McpServer
 	/** @var callable|null Callback invoked when a re-initialize is received (cleanup prior state). */
 	private $onReinitialize = null;
 
+	/** @var callable|null Optional logger: function(string $message): void */
+	private $logger = null;
+
 	/**
 	 * Create a new MCP server instance.
 	 *
@@ -84,6 +87,23 @@ class McpServer
 	}
 
 	/**
+	 * Set a logging callback for protocol-level diagnostics.
+	 *
+	 * Receives one line per request describing the method, tool name,
+	 * argument digests, duration, and outcome. Argument VALUES are never
+	 * logged — only lengths and SHA-256 digests — so secrets passed as
+	 * tool arguments cannot leak into log files.
+	 *
+	 * @param  callable $logger Function accepting a string message
+	 * @return self             Fluent interface
+	 */
+	public function setLogger(callable $logger): self
+	{
+		$this->logger = $logger;
+		return $this;
+	}
+
+	/**
 	 * Register an object's tools with the server.
 	 *
 	 * @param  object $handler Object containing McpTool-annotated methods
@@ -107,6 +127,14 @@ class McpServer
 		$method = $request['method'] ?? '';
 		$params = $request['params'] ?? [];
 
+		$started = microtime(true);
+		if ($method === 'tools/call') {
+			$toolName = $params['name'] ?? '';
+			$this->log("Request tools/call '{$toolName}' (id=" . json_encode($id) . ') ' . $this->summarizeArguments($params['arguments'] ?? []));
+		} else {
+			$this->log("Request {$method} (id=" . json_encode($id) . ')');
+		}
+
 		try {
 			$result = match($method) {
 				'initialize' => $this->handleInitialize($params),
@@ -124,10 +152,66 @@ class McpServer
 				return [];
 			}
 
+			$elapsed = round((microtime(true) - $started) * 1000, 1);
+			if (is_array($result) && !empty($result['isError'])) {
+				$this->log("Error {$method}" . ($method === 'tools/call' ? " '{$toolName}'" : '') . " (id=" . json_encode($id) . ") tool reported failure after {$elapsed}ms");
+			} else {
+				$this->log("OK {$method}" . ($method === 'tools/call' ? " '{$toolName}'" : '') . " (id=" . json_encode($id) . ") {$elapsed}ms");
+			}
+
 			return $this->successResponse($id, $result);
 
 		} catch (\Throwable $e) {
+			$elapsed = round((microtime(true) - $started) * 1000, 1);
+			$this->log("Error {$method}" . ($method === 'tools/call' ? " '{$toolName}'" : '') . " (id=" . json_encode($id) . ") {$elapsed}ms: {$e->getMessage()}");
 			return $this->errorResponse($id, (int)($e->getCode()) ?: -32603, $e->getMessage());
+		}
+	}
+
+	/**
+	 * Build a secret-safe summary of tool call arguments for logging.
+	 *
+	 * Scalars (int, float, bool, null) are logged as-is; strings are
+	 * reduced to length + SHA-256 digest so values (which may be tokens
+	 * or secrets) never appear in logs; arrays are summarized by their
+	 * JSON encoding length + digest.
+	 *
+	 * @param  array<string,mixed> $arguments Tool call arguments
+	 * @return string                         e.g. "args: owner=5 page=1 data(len=10308 sha256=9f2c…)"
+	 */
+	private function summarizeArguments(array $arguments): string
+	{
+		if (empty($arguments)) {
+			return 'args: (none)';
+		}
+
+		$parts = [];
+		foreach ($arguments as $key => $value) {
+			if (is_string($value)) {
+				$parts[] = $key . '(' . Logger::digest($value) . ')';
+			} elseif (is_scalar($value) || $value === null) {
+				$parts[] = $key . '=' . json_encode($value);
+			} else {
+				$json = json_encode($value);
+				$parts[] = $key . '(' . Logger::digest($json === false ? '' : $json) . ')';
+			}
+		}
+		return 'args: ' . implode(' ', $parts);
+	}
+
+	/**
+	 * Log a message via the configured logger.
+	 *
+	 * @param string $message
+	 */
+	private function log(string $message): void
+	{
+		if ($this->logger !== null) {
+			try {
+				($this->logger)($message);
+			} catch (\Throwable $e) {
+				// Logging must never break protocol handling
+			}
 		}
 	}
 

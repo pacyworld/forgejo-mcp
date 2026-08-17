@@ -36,6 +36,12 @@ class Client
 	/** @var string|null Cached server version (null = not yet fetched) */
 	private ?string $serverVersion = null;
 
+	/** @var \EnchiladaMCP\Logger|null Optional logger for HTTP request diagnostics */
+	private ?\EnchiladaMCP\Logger $logger = null;
+
+	/** @var int HTTP status code of the most recent request (0 = none yet) */
+	private int $lastHttpCode = 0;
+
 	/**
 	 * Create a new Forgejo API client.
 	 *
@@ -60,6 +66,20 @@ class Client
 		$this->http = new \EnchiladaHTTP($this->baseUrl);
 		$this->http->setTimeout($timeout);
 		$this->http->setVerifySsl($verifySsl);
+	}
+
+	/**
+	 * Set a logger for HTTP request/response diagnostics.
+	 *
+	 * Every API call is logged with method, path, body digest, status code,
+	 * and duration. Access tokens and request/response bodies are never
+	 * logged — bodies are reduced to length + SHA-256 digest.
+	 *
+	 * @param \EnchiladaMCP\Logger|null $logger Logger instance, or null to disable
+	 */
+	public function setLogger(?\EnchiladaMCP\Logger $logger): void
+	{
+		$this->logger = $logger;
 	}
 
 	/**
@@ -150,26 +170,45 @@ class Client
 			'Authorization: token ' . $this->token,
 		];
 
+		$started = microtime(true);
+		$this->log('debug', 'HTTP GET (raw) ' . self::redactUrl($url));
+
 		if ($this->httpClient !== null) {
 			$response = ($this->httpClient)('GET', $url, $headers, null);
+			$this->lastHttpCode = $response['code'];
 			if ($response['code'] >= 400) {
+				$this->log('error', 'HTTP GET (raw) ' . self::redactUrl($url)
+					. " failed after " . $this->elapsedMs($started) . "ms: HTTP {$response['code']}");
 				throw new ClientException("HTTP {$response['code']} for {$url}", $response['code']);
 			}
+			$this->log('debug', 'HTTP GET (raw) ' . self::redactUrl($url)
+				. " -> {$response['code']} in " . $this->elapsedMs($started)
+				. 'ms response(' . \EnchiladaMCP\Logger::digest($response['body']) . ')');
 			return $response['body'];
 		}
 
 		try {
 			$result = $this->http->call($path, null, 'GET', $headers, null, 'raw');
 		} catch (\Exception $e) {
+			$this->log('error', 'HTTP GET (raw) ' . self::redactUrl($url)
+				. " failed after " . $this->elapsedMs($started) . "ms: {$e->getMessage()}");
 			throw new ClientException("HTTP error: " . $e->getMessage(), 0);
 		}
 
 		$httpCode = $this->http->getHttpCode();
+		$this->lastHttpCode = $httpCode;
 		if ($httpCode >= 400) {
+			$this->log('error', 'HTTP GET (raw) ' . self::redactUrl($url)
+				. " failed after " . $this->elapsedMs($started) . "ms: HTTP {$httpCode}");
 			throw new ClientException("API error ({$httpCode}) for {$url}", $httpCode);
 		}
 
-		return is_string($result) ? $result : '';
+		$body = is_string($result) ? $result : '';
+		$this->log('debug', 'HTTP GET (raw) ' . self::redactUrl($url)
+			. " -> {$httpCode} in " . $this->elapsedMs($started)
+			. 'ms response(' . \EnchiladaMCP\Logger::digest($body) . ')');
+
+		return $body;
 	}
 
 	/**
@@ -202,21 +241,36 @@ class Client
 			'Content-Type: multipart/form-data; boundary=' . $boundary,
 		];
 
+		$started = microtime(true);
+		$this->log('debug', "HTTP POST (upload {$filename}) " . self::redactUrl($url)
+			. ' body(' . \EnchiladaMCP\Logger::digest($body) . ')');
+
 		if ($this->httpClient !== null) {
 			$response = ($this->httpClient)('POST', $url, $headers, $body);
-			return $this->handleResponse($response['code'], $response['body'], $url);
+			$result = $this->handleResponse($response['code'], $response['body'], $url);
+			$this->log('debug', "HTTP POST (upload {$filename}) " . self::redactUrl($url)
+				. " -> {$this->lastHttpCode} in " . $this->elapsedMs($started) . 'ms');
+			return $result;
 		}
 
 		try {
 			$result = $this->http->call($path, $body, 'POST', $headers, null, 'json');
 		} catch (\Exception $e) {
+			$this->log('error', "HTTP POST (upload {$filename}) " . self::redactUrl($url)
+				. " failed after " . $this->elapsedMs($started) . "ms: {$e->getMessage()}");
 			throw new ClientException("Upload error: " . $e->getMessage(), 0);
 		}
 
 		$httpCode = $this->http->getHttpCode();
+		$this->lastHttpCode = $httpCode;
 		if ($httpCode >= 400) {
+			$this->log('error', "HTTP POST (upload {$filename}) " . self::redactUrl($url)
+				. " failed after " . $this->elapsedMs($started) . "ms: HTTP {$httpCode}");
 			throw new ClientException("Upload failed ({$httpCode}) for {$url}", $httpCode);
 		}
+
+		$this->log('debug', "HTTP POST (upload {$filename}) " . self::redactUrl($url)
+			. " -> {$httpCode} in " . $this->elapsedMs($started) . 'ms');
 
 		return is_array($result) ? $result : [];
 	}
@@ -312,13 +366,28 @@ class Client
 
 		$body = ($data !== null) ? json_encode($data) : null;
 
-		// Use injected HTTP client if available (for testing)
-		if ($this->httpClient !== null) {
-			$response = ($this->httpClient)($method, $url, $headers, $body);
-			return $this->handleResponse($response['code'], $response['body'], $url);
+		$started = microtime(true);
+		$this->log('debug', "HTTP {$method} " . self::redactUrl($url)
+			. ($body !== null ? ' body(' . \EnchiladaMCP\Logger::digest($body) . ')' : ''));
+
+		try {
+			// Use injected HTTP client if available (for testing)
+			if ($this->httpClient !== null) {
+				$response = ($this->httpClient)($method, $url, $headers, $body);
+				$result = $this->handleResponse($response['code'], $response['body'], $url);
+			} else {
+				$result = $this->enchiladaRequest($method, $path, $data, $headers);
+			}
+		} catch (ClientException $e) {
+			$this->log('error', "HTTP {$method} " . self::redactUrl($url)
+				. " failed after " . $this->elapsedMs($started) . "ms: {$e->getMessage()}");
+			throw $e;
 		}
 
-		return $this->enchiladaRequest($method, $path, $data, $headers);
+		$this->log('debug', "HTTP {$method} " . self::redactUrl($url)
+			. " -> {$this->lastHttpCode} in " . $this->elapsedMs($started) . 'ms');
+
+		return $result;
 	}
 
 	/**
@@ -347,6 +416,7 @@ class Client
 		}
 
 		$httpCode = $this->http->getHttpCode();
+		$this->lastHttpCode = $httpCode;
 
 		// Handle 204 No Content (common for DELETE, some PUT)
 		if ($httpCode === 204) {
@@ -374,6 +444,8 @@ class Client
 	 */
 	private function handleResponse(int $httpCode, string $responseBody, string $url): array
 	{
+		$this->lastHttpCode = $httpCode;
+
 		if ($httpCode === 204) {
 			return [];
 		}
@@ -419,5 +491,45 @@ class Client
 		}
 
 		return $decoded ?? [];
+	}
+
+	/**
+	 * Log a message at the given level via the configured logger.
+	 *
+	 * @param string $level   Level name: debug, info, error
+	 * @param string $message Message text
+	 */
+	private function log(string $level, string $message): void
+	{
+		if ($this->logger === null) {
+			return;
+		}
+		try {
+			$this->logger->{$level}($message);
+		} catch (\Throwable $e) {
+			// Logging must never break API calls
+		}
+	}
+
+	/**
+	 * Elapsed milliseconds since the given microtime.
+	 *
+	 * @param  float $started microtime(true) at start of operation
+	 * @return float          Elapsed milliseconds (1 decimal)
+	 */
+	private function elapsedMs(float $started): float
+	{
+		return round((microtime(true) - $started) * 1000, 1);
+	}
+
+	/**
+	 * Redact credential material that may appear in URL query strings.
+	 *
+	 * @param  string $url URL to sanitize
+	 * @return string      URL with token/access_token parameter values masked
+	 */
+	private static function redactUrl(string $url): string
+	{
+		return preg_replace('/([?&](?:token|access_token|private_token)=)[^&]*/i', '$1[REDACTED]', $url);
 	}
 }

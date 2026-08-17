@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **Diagnostic logging** across all layers, enabled via `FORGEJO_MCP_LOG=/path/to/file` (or `--log=`), with `FORGEJO_MCP_LOG_LEVEL` (`debug`|`info`|`error`, default `debug`) and `FORGEJO_MCP_LOG_STDERR` (default on). Stdout remains protocol-only.
+  - Transport: every inbound/outbound JSON-RPC line with byte length, SHA-256 digest, and 200-char preview; invalid JSON, write failures, EOF.
+  - Protocol (`McpServer`): every request with method, id, tool name, per-argument digests, duration, and outcome.
+  - HTTP (`Client`): every API call with method, URL, body digest, status code, and duration; errors logged at `error` level.
+  - `InstanceManager` logs client creation per instance:user.
+- Secret-safe by design: string arguments and request/response bodies are logged as `len=N sha256=...` digests only; Authorization headers are never logged; `token=`/`access_token=` URL parameters are redacted. Digests allow byte-exactness verification without exposing secret material.
+- New `EnchiladaMCP\Logger` (callable, level-filtered, failure-proof file/stderr logger), vendored from Enchilada Extras.
+
 ## v1.1.0 — 2026-08-07
 
 ### Upgrade Notes

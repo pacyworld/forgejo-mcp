@@ -257,6 +257,27 @@ class ClientTest extends TestCase
 		$client->get('user');
 	}
 
+	public function testTimeoutMessageExplainsCause(): void
+	{
+		$client = $this->makeClient(fn() => ['code' => 200, 'body' => '{}']);
+
+		// Simulate EnchiladaHTTP state after CURLE_OPERATION_TIMEDOUT (28)
+		$clientRef = new \ReflectionProperty(Client::class, 'http');
+		$http = $clientRef->getValue($client);
+		$errnoRef = new \ReflectionProperty(\EnchiladaHTTP::class, 'last_curl_errno');
+		$errnoRef->setValue($http, 28);
+		$errorRef = new \ReflectionProperty(\EnchiladaHTTP::class, 'last_curl_error');
+		$errorRef->setValue($http, 'Operation timed out after 30000 milliseconds');
+
+		$method = new \ReflectionMethod(Client::class, 'transportError');
+		$exception = $method->invoke($client, 'https://example.com/api/v1/repos/o/r/pulls/1/merge');
+
+		$this->assertStringContainsString('timed out after 30s', $exception->getMessage());
+		$this->assertStringContainsString('known issue', $exception->getMessage());
+		$this->assertStringContainsString('may have already completed', $exception->getMessage());
+		$this->assertStringContainsString('Verify the state on the server before retrying', $exception->getMessage());
+	}
+
 	public function testTransportFailureIsLoggedAsError(): void
 	{
 		$client = $this->makeClient(fn() => ['code' => 0, 'body' => '']);

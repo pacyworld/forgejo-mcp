@@ -30,6 +30,9 @@ class Client
 	/** @var bool */
 	private bool $verifySsl;
 
+	/** @var int Request timeout in seconds */
+	private int $timeout;
+
 	/** @var callable|null Optional HTTP callable for testing */
 	private $httpClient;
 
@@ -61,6 +64,7 @@ class Client
 		$this->baseUrl = rtrim($baseUrl, '/');
 		$this->token = $token;
 		$this->verifySsl = $verifySsl;
+		$this->timeout = $timeout;
 		$this->httpClient = $httpClient;
 
 		$this->http = new \EnchiladaHTTP($this->baseUrl);
@@ -200,11 +204,7 @@ class Client
 		if ($httpCode === 0 || $this->http->getLastCurlErrno() !== 0) {
 			$this->log('error', 'HTTP GET (raw) ' . self::redactUrl($url)
 				. " transport failure after " . $this->elapsedMs($started) . 'ms: ' . $this->http->getLastCurlError());
-			throw new ClientException(
-				"Transport error for {$url}: " . $this->http->getLastCurlError()
-					. " (curl errno " . $this->http->getLastCurlErrno() . ")",
-				0
-			);
+			throw $this->transportError($url);
 		}
 		if ($httpCode >= 400) {
 			$this->log('error', 'HTTP GET (raw) ' . self::redactUrl($url)
@@ -275,11 +275,7 @@ class Client
 		if ($httpCode === 0 || $this->http->getLastCurlErrno() !== 0) {
 			$this->log('error', "HTTP POST (upload {$filename}) " . self::redactUrl($url)
 				. " transport failure after " . $this->elapsedMs($started) . 'ms: ' . $this->http->getLastCurlError());
-			throw new ClientException(
-				"Transport error for {$url}: " . $this->http->getLastCurlError()
-					. " (curl errno " . $this->http->getLastCurlErrno() . ")",
-				0
-			);
+			throw $this->transportError($url);
 		}
 		if ($httpCode >= 400) {
 			$this->log('error', "HTTP POST (upload {$filename}) " . self::redactUrl($url)
@@ -444,11 +440,7 @@ class Client
 		// Transport-level failure (timeout, DNS, connection refused): curl
 		// returned false with no HTTP status. Never treat as success.
 		if ($httpCode === 0 || $this->http->getLastCurlErrno() !== 0) {
-			throw new ClientException(
-				"Transport error for {$this->baseUrl}/{$path}: " . $this->http->getLastCurlError()
-					. " (curl errno " . $this->http->getLastCurlErrno() . ")",
-				0
-			);
+			throw $this->transportError("{$this->baseUrl}/{$path}");
 		}
 
 		if ($result === false || $result === null) {
@@ -523,6 +515,38 @@ class Client
 		}
 
 		return $decoded ?? [];
+	}
+
+	/**
+	 * Build an exception for a transport-level failure (no HTTP response).
+	 *
+	 * Timeouts get an explanatory message: they are a known issue with
+	 * long-running server-side operations (e.g. merges on large
+	 * repositories), and the server may still have completed the
+	 * operation — callers must verify state before retrying.
+	 *
+	 * @param  string $url Request URL (already credential-safe)
+	 * @return ClientException
+	 */
+	private function transportError(string $url): ClientException
+	{
+		$errno = $this->http->getLastCurlErrno();
+		$error = $this->http->getLastCurlError();
+
+		if ($errno === CURLE_OPERATION_TIMEDOUT) {
+			return new ClientException(
+				"Request timed out after {$this->timeout}s for {$url}. "
+				. "This is a known issue with long-running server-side operations "
+				. "(e.g. merges on large repositories); the server may still be processing "
+				. "or may have already completed the operation. "
+				. "Verify the state on the server before retrying. "
+				. "If this happens repeatedly, increase the 'timeout' value for this "
+				. "instance in instances.json.",
+				0
+			);
+		}
+
+		return new ClientException("Transport error for {$url}: {$error} (curl errno {$errno})", 0);
 	}
 
 	/**

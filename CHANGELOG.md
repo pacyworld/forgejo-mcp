@@ -3,7 +3,7 @@
 ## Unreleased
 
 ### Fixed
-- **Timeouts and transport failures no longer silently succeed.** Previously, when curl failed without an HTTP status (timeout, DNS failure, connection refused), the API client returned an empty result `[]` as if the call succeeded — e.g. a PR merge POST that timed out after 30s was reported to the agent as successful. Now such failures throw a `ClientException` with the curl error message and errno, and are logged at `error` level. EnchiladaHTTP gained `getLastCurlErrno()`/`getLastCurlError()` accessors.
+- **Timeouts and transport failures no longer silently succeed.** Previously, when curl failed without an HTTP status (timeout, DNS failure, connection refused), the API client returned an empty result `[]` as if the call succeeded — e.g. a PR merge POST that timed out after 30s was reported to the agent as successful. Now such failures throw a `ClientException` and are logged at `error` level. Timeout errors (curl errno 28) carry an explanatory message: the timeout is a known issue with long-running server-side operations (e.g. merges on large repositories), the server may still have completed the operation, and state should be verified before retrying (the long-term fix is async request handling). EnchiladaHTTP gained `getLastCurlErrno()`/`getLastCurlError()` accessors.
 - `resources/list` is now handled (returns registered static resources). MCP clients such as rmcp (Devin CLI) call it after initialize when the server advertises the resources capability; it previously returned -32601 Method not found.
 - Tool-level failures (e.g. "Missing required argument") now include the tool's error text in the log line instead of just "tool reported failure".
 

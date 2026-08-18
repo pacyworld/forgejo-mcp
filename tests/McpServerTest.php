@@ -13,6 +13,12 @@ class McpServerTestHandler
 		throw new \RuntimeException('the specific failure reason');
 	}
 
+	#[McpTool(name: 'timeout_tool', description: 'Always times out')]
+	public function timeoutTool(): array
+	{
+		throw new \Forgejo\TimeoutException('Request timed out after 30s. Verify the state on the server before retrying.', 0);
+	}
+
 	#[McpResource(uriTemplate: 'test://static', name: 'Static', description: 'Static resource')]
 	public function staticResource(): array
 	{
@@ -83,6 +89,31 @@ class McpServerTest extends TestCase
 		$log = implode("\n", $messages);
 		$this->assertStringContainsString("tools/call 'failing_tool'", $log);
 		$this->assertStringContainsString('the specific failure reason', $log);
+	}
+
+	public function testToolWarningReturnsNonErrorResult(): void
+	{
+		$messages = [];
+		$server = $this->makeServer();
+		$server->setLogger(function (string $message) use (&$messages) {
+			$messages[] = $message;
+		});
+
+		$response = $server->handleRequest([
+			'jsonrpc' => '2.0',
+			'id' => 5,
+			'method' => 'tools/call',
+			'params' => ['name' => 'timeout_tool', 'arguments' => []],
+		]);
+
+		// Warning: normal result, NOT isError
+		$this->assertArrayHasKey('result', $response);
+		$this->assertArrayNotHasKey('isError', $response['result']);
+		$this->assertStringEndsWith('Verify the state on the server before retrying.', $response['result']['content'][0]['text']);
+		$this->assertStringContainsString('timed out', $response['result']['content'][0]['text']);
+
+		$log = implode("\n", $messages);
+		$this->assertStringContainsString("Warning tools/call 'timeout_tool'", $log);
 	}
 
 	public function testToolCallLogsArgumentDigestsNotValues(): void

@@ -290,6 +290,13 @@ class McpServer
 
 		try {
 			$result = $this->registry->callTool($name, $arguments);
+		} catch (ToolWarningInterface $e) {
+			// Uncertain-but-not-failed outcome (e.g. upstream timeout where
+			// the server may still have completed the operation). Return as
+			// a normal result so the agent can read the explanation and
+			// verify state instead of treating the call as failed.
+			$this->log("Warning tools/call '{$name}': " . Logger::truncate($e->getMessage()));
+			return ToolResult::text($e->getMessage())->toArray();
 		} catch (\Throwable $e) {
 			return ToolResult::error($e->getMessage())->toArray();
 		}

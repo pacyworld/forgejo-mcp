@@ -272,6 +272,10 @@ class ClientTest extends TestCase
 		$method = new \ReflectionMethod(Client::class, 'transportError');
 		$exception = $method->invoke($client, 'https://example.com/api/v1/repos/o/r/pulls/1/merge');
 
+		// Timeout is a tool warning (non-error MCP result), still a ClientException for catch compatibility
+		$this->assertInstanceOf(\Forgejo\TimeoutException::class, $exception);
+		$this->assertInstanceOf(ClientException::class, $exception);
+		$this->assertInstanceOf(\EnchiladaMCP\ToolWarningInterface::class, $exception);
 		$this->assertStringContainsString('timed out after 30s', $exception->getMessage());
 		$this->assertStringContainsString('known issue', $exception->getMessage());
 		$this->assertStringContainsString('may have already completed', $exception->getMessage());

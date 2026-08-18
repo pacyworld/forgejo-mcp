@@ -520,13 +520,14 @@ class Client
 	/**
 	 * Build an exception for a transport-level failure (no HTTP response).
 	 *
-	 * Timeouts get an explanatory message: they are a known issue with
-	 * long-running server-side operations (e.g. merges on large
-	 * repositories), and the server may still have completed the
+	 * Timeouts get an explanatory message and are returned as
+	 * TimeoutException (a tool warning, not an error): they are a known
+	 * issue with long-running server-side operations (e.g. merges on
+	 * large repositories), and the server may still have completed the
 	 * operation — callers must verify state before retrying.
 	 *
 	 * @param  string $url Request URL (already credential-safe)
-	 * @return ClientException
+	 * @return ClientException TimeoutException for timeouts
 	 */
 	private function transportError(string $url): ClientException
 	{
@@ -534,7 +535,7 @@ class Client
 		$error = $this->http->getLastCurlError();
 
 		if ($errno === CURLE_OPERATION_TIMEDOUT) {
-			return new ClientException(
+			return new TimeoutException(
 				"Request timed out after {$this->timeout}s for {$url}. "
 				. "This is a known issue with long-running server-side operations "
 				. "(e.g. merges on large repositories); the server may still be processing "

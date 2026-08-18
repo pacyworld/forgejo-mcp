@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+- **Timeouts and transport failures no longer silently succeed.** Previously, when curl failed without an HTTP status (timeout, DNS failure, connection refused), the API client returned an empty result `[]` as if the call succeeded — e.g. a PR merge POST that timed out after 30s was reported to the agent as successful. Now such failures throw a `ClientException` with the curl error message and errno, and are logged at `error` level. EnchiladaHTTP gained `getLastCurlErrno()`/`getLastCurlError()` accessors.
+- `resources/list` is now handled (returns registered static resources). MCP clients such as rmcp (Devin CLI) call it after initialize when the server advertises the resources capability; it previously returned -32601 Method not found.
+- Tool-level failures (e.g. "Missing required argument") now include the tool's error text in the log line instead of just "tool reported failure".
+
 ### Added
 - **Diagnostic logging** across all layers, enabled via `FORGEJO_MCP_LOG=/path/to/file` (or `--log=`), with `FORGEJO_MCP_LOG_LEVEL` (`debug`|`info`|`error`, default `debug`) and `FORGEJO_MCP_LOG_STDERR` (default on). Stdout remains protocol-only.
   - Transport: every inbound/outbound JSON-RPC line with byte length, SHA-256 digest, and 200-char preview; invalid JSON, write failures, EOF.

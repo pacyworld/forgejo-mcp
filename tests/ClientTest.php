@@ -244,4 +244,35 @@ class ClientTest extends TestCase
 		$result = $client->get('user');
 		$this->assertEquals('testuser', $result['login']);
 	}
+
+	public function testTransportFailureCode0Throws(): void
+	{
+		// Simulates a curl timeout: no HTTP response, code 0. This must never
+		// be silently treated as an empty success (regression: a timed-out PR
+		// merge was previously reported as OK with an empty result).
+		$client = $this->makeClient(fn() => ['code' => 0, 'body' => '']);
+
+		$this->expectException(ClientException::class);
+		$this->expectExceptionMessage('Transport error');
+		$client->get('user');
+	}
+
+	public function testTransportFailureIsLoggedAsError(): void
+	{
+		$client = $this->makeClient(fn() => ['code' => 0, 'body' => '']);
+		$client->setLogger($this->makeFileLogger($logFile));
+
+		try {
+			$client->get('user');
+			$this->fail('Expected ClientException');
+		} catch (ClientException $e) {
+			// expected
+		}
+
+		$log = file_get_contents($logFile);
+		unlink($logFile);
+
+		$this->assertStringContainsString('[ERROR]', $log);
+		$this->assertStringContainsString('Transport error', $log);
+	}
 }

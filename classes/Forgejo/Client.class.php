@@ -197,6 +197,15 @@ class Client
 
 		$httpCode = $this->http->getHttpCode();
 		$this->lastHttpCode = $httpCode;
+		if ($httpCode === 0 || $this->http->getLastCurlErrno() !== 0) {
+			$this->log('error', 'HTTP GET (raw) ' . self::redactUrl($url)
+				. " transport failure after " . $this->elapsedMs($started) . 'ms: ' . $this->http->getLastCurlError());
+			throw new ClientException(
+				"Transport error for {$url}: " . $this->http->getLastCurlError()
+					. " (curl errno " . $this->http->getLastCurlErrno() . ")",
+				0
+			);
+		}
 		if ($httpCode >= 400) {
 			$this->log('error', 'HTTP GET (raw) ' . self::redactUrl($url)
 				. " failed after " . $this->elapsedMs($started) . "ms: HTTP {$httpCode}");
@@ -263,6 +272,15 @@ class Client
 
 		$httpCode = $this->http->getHttpCode();
 		$this->lastHttpCode = $httpCode;
+		if ($httpCode === 0 || $this->http->getLastCurlErrno() !== 0) {
+			$this->log('error', "HTTP POST (upload {$filename}) " . self::redactUrl($url)
+				. " transport failure after " . $this->elapsedMs($started) . 'ms: ' . $this->http->getLastCurlError());
+			throw new ClientException(
+				"Transport error for {$url}: " . $this->http->getLastCurlError()
+					. " (curl errno " . $this->http->getLastCurlErrno() . ")",
+				0
+			);
+		}
 		if ($httpCode >= 400) {
 			$this->log('error', "HTTP POST (upload {$filename}) " . self::redactUrl($url)
 				. " failed after " . $this->elapsedMs($started) . "ms: HTTP {$httpCode}");
@@ -423,6 +441,16 @@ class Client
 			return [];
 		}
 
+		// Transport-level failure (timeout, DNS, connection refused): curl
+		// returned false with no HTTP status. Never treat as success.
+		if ($httpCode === 0 || $this->http->getLastCurlErrno() !== 0) {
+			throw new ClientException(
+				"Transport error for {$this->baseUrl}/{$path}: " . $this->http->getLastCurlError()
+					. " (curl errno " . $this->http->getLastCurlErrno() . ")",
+				0
+			);
+		}
+
 		if ($result === false || $result === null) {
 			if ($httpCode >= 400) {
 				throw new ClientException("API error ({$httpCode}) for {$this->baseUrl}/{$path}", $httpCode);
@@ -448,6 +476,10 @@ class Client
 
 		if ($httpCode === 204) {
 			return [];
+		}
+
+		if ($httpCode === 0) {
+			throw new ClientException("Transport error for {$url}: no HTTP response received", 0);
 		}
 
 		if ($httpCode === 401) {

@@ -141,6 +141,7 @@ class McpServer
 				'notifications/initialized' => null,
 				'tools/list' => $this->handleToolsList($params),
 				'tools/call' => $this->handleToolsCall($params),
+				'resources/list' => $this->handleResourcesList($params),
 				'resources/templates/list' => $this->handleResourceTemplatesList($params),
 				'resources/read' => $this->handleResourcesRead($params),
 				'ping' => new \stdClass(),
@@ -154,7 +155,8 @@ class McpServer
 
 			$elapsed = round((microtime(true) - $started) * 1000, 1);
 			if (is_array($result) && !empty($result['isError'])) {
-				$this->log("Error {$method}" . ($method === 'tools/call' ? " '{$toolName}'" : '') . " (id=" . json_encode($id) . ") tool reported failure after {$elapsed}ms");
+				$errorText = $result['content'][0]['text'] ?? '(no detail)';
+				$this->log("Error {$method}" . ($method === 'tools/call' ? " '{$toolName}'" : '') . " (id=" . json_encode($id) . ") tool reported failure after {$elapsed}ms: " . Logger::truncate($errorText));
 			} else {
 				$this->log("OK {$method}" . ($method === 'tools/call' ? " '{$toolName}'" : '') . " (id=" . json_encode($id) . ") {$elapsed}ms");
 			}
@@ -315,6 +317,19 @@ class McpServer
 			'jsonrpc' => '2.0',
 			'id' => $id,
 			'result' => $result,
+		];
+	}
+
+	/**
+	 * Handle resources/list request.
+	 *
+	 * @param  array<string,mixed> $params Request parameters
+	 * @return array<string,mixed>         Resources list response
+	 */
+	private function handleResourcesList(array $params): array
+	{
+		return [
+			'resources' => $this->registry->listResources(),
 		];
 	}
 

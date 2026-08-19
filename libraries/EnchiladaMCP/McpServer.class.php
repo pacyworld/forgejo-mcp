@@ -275,9 +275,11 @@ class McpServer
 	/**
 	 * Handle tools/call request.
 	 *
+	 * Unknown tool names are returned as tool-level error results (with
+	 * name suggestions), not protocol-level errors.
+	 *
 	 * @param  array<string,mixed> $params Request parameters
 	 * @return array<string,mixed>         Tool call response
-	 * @throws \Exception                  If tool not found
 	 */
 	private function handleToolsCall(array $params): array
 	{
@@ -285,7 +287,13 @@ class McpServer
 		$arguments = $params['arguments'] ?? [];
 
 		if (!$this->registry->hasTool($name)) {
-			throw new \Exception("Unknown tool: {$name}", -32602);
+			// Return as a tool-level error result rather than a protocol-level
+			// -32602: several MCP clients treat protocol errors as connection
+			// failures (tearing down and restarting the server), while an
+			// isError result is shown to the agent so it can self-correct.
+			$suggestions = implode(', ', $this->registry->suggestTools($name));
+			$this->log("Unknown tool '{$name}' (closest matches: {$suggestions})");
+			return ToolResult::error("Unknown tool: '{$name}'. Closest matches: {$suggestions}")->toArray();
 		}
 
 		try {

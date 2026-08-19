@@ -116,6 +116,34 @@ class McpServerTest extends TestCase
 		$this->assertStringContainsString("Warning tools/call 'timeout_tool'", $log);
 	}
 
+	public function testUnknownToolReturnsToolErrorWithSuggestions(): void
+	{
+		$messages = [];
+		$server = $this->makeServer();
+		$server->setLogger(function (string $message) use (&$messages) {
+			$messages[] = $message;
+		});
+
+		$response = $server->handleRequest([
+			'jsonrpc' => '2.0',
+			'id' => 6,
+			'method' => 'tools/call',
+			'params' => ['name' => 'forgejo_failing_tool', 'arguments' => []],
+		]);
+
+		// Tool-level error result, NOT a protocol-level error — clients treat
+		// protocol errors as connection failures and restart the server.
+		$this->assertArrayHasKey('result', $response);
+		$this->assertArrayNotHasKey('error', $response);
+		$this->assertNotEmpty($response['result']['isError']);
+		$text = $response['result']['content'][0]['text'];
+		$this->assertStringContainsString("Unknown tool: 'forgejo_failing_tool'", $text);
+		$this->assertStringContainsString('failing_tool', $text); // suggestion present
+
+		$log = implode("\n", $messages);
+		$this->assertStringContainsString("Unknown tool 'forgejo_failing_tool'", $log);
+	}
+
 	public function testToolCallLogsArgumentDigestsNotValues(): void
 	{
 		$messages = [];

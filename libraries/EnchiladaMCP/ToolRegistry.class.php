@@ -210,6 +210,47 @@ class ToolRegistry
 	}
 
 	/**
+	 * Suggest registered tool names closest to the given (unknown) name.
+	 *
+	 * Intended for "unknown tool" diagnostics: LLM clients occasionally
+	 * hallucinate tool names (e.g. inventing a vendor prefix), and a
+	 * suggestion list lets the caller self-correct on the next attempt.
+	 *
+	 * @param  string   $name Unknown tool name
+	 * @param  int      $max  Maximum suggestions (default 3)
+	 * @return string[]       Closest tool names, nearest first
+	 */
+	public function suggestTools(string $name, int $max = 3): array
+	{
+		$queryTokens = explode('_', strtolower($name));
+
+		$scored = [];
+		foreach (array_keys($this->handlers) as $candidate) {
+			$overlap = 0;
+			foreach (explode('_', strtolower($candidate)) as $candidateToken) {
+				foreach ($queryTokens as $queryToken) {
+					// Exact match, or prefix match for tokens long enough to be
+					// meaningful (catches singular/plural: repo ~ repos)
+					if (
+						$candidateToken === $queryToken
+						|| (strlen($queryToken) >= 4 && strlen($candidateToken) >= 4
+							&& (str_starts_with($candidateToken, $queryToken) || str_starts_with($queryToken, $candidateToken)))
+					) {
+						$overlap++;
+						break;
+					}
+				}
+			}
+			// Rank by token overlap (handles hallucinated vendor prefixes and
+			// word-order swaps), then by edit distance as tiebreak
+			$scored[$candidate] = [-$overlap, levenshtein(strtolower($name), strtolower($candidate))];
+		}
+
+		uasort($scored, fn($a, $b) => $a <=> $b);
+		return array_slice(array_keys($scored), 0, $max);
+	}
+
+	/**
 	 * Register a single resource template from a method and attribute.
 	 *
 	 * @param object          $handler  Handler object

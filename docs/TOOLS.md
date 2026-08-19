@@ -6,9 +6,7 @@ All tools accept optional `instance` and `user` parameters to target a specific 
 
 | Tool | Description |
 |------|-------------|
-| `forgejo_list_instances` | List all configured instances with users and current defaults |
-| `forgejo_switch_instance` | Switch the active Forgejo instance |
-| `forgejo_switch_user` | Switch the active user within the current instance |
+| `list_forgejo_instances` | List all configured instances with users |
 | `get_forgejo_mcp_server_version` | Get MCP server name and version |
 | `get_forgejo_version` | Get the Forgejo server version and supported version-gated API features |
 

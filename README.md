@@ -156,7 +156,7 @@ Config file is auto-discovered from these locations (first found wins):
 `get_my_user_info`, `search_users`
 
 ### Instance Management
-`forgejo_list_instances`, `forgejo_switch_instance`, `forgejo_switch_user`
+`list_forgejo_instances`
 
 ### Server
 `get_forgejo_mcp_server_version`

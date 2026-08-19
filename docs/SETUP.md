@@ -114,15 +114,9 @@ Add to your MCP configuration:
 
 Same format in your VS Code MCP settings.
 
-## Switching contexts at runtime
+## Selecting instances and users
 
-Use the instance management tools without restarting:
-
-- `forgejo_list_instances` — see all configured instances and current default
-- `forgejo_switch_instance` — change the active Forgejo server
-- `forgejo_switch_user` — change the active user within the current instance
-
-All other tools accept optional `instance` and `user` parameters to override the default for a single call.
+Every tool call takes `instance` and `user` parameters (both required) — there is no global "active" context to switch. Use `list_forgejo_instances` to see the configured instances and their users.
 
 ## Logging
 

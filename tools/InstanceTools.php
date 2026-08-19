@@ -24,11 +24,11 @@ class InstanceTools
 	 * List all configured Forgejo instances and their users.
 	 */
 	#[McpTool(
-		name: 'forgejo_list_instances',
+		name: 'list_forgejo_instances',
 		description: 'List all configured Forgejo instances with their users.',
 		readOnlyHint: true
 	)]
-	public function forgejo_list_instances(): array
+	public function list_forgejo_instances(): array
 	{
 		return [
 			'instances' => $this->manager->listInstances(),

@@ -1,6 +1,6 @@
 Forgejo MCP server for managing Forgejo/Gitea instances. Supports multiple instances and users.
 
-Use forgejo_list_instances to see configured instances. The 'instance' and 'user' parameters are required on all tool calls.
+Use list_forgejo_instances to see configured instances. The 'instance' and 'user' parameters are required on all tool calls.
 
 Key capabilities:
 - Repository management (create, fork, search, list)

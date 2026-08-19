@@ -9,6 +9,12 @@
 - **Unknown tool names no longer kill the client connection.** `tools/call` for an unregistered tool previously returned a protocol-level `-32602` error, which some MCP clients (Windsurf/rmcp) surface as "Failed to connect to MCP server" before tearing down and restarting the server process. It now returns a tool-level error result (`isError: true`) with the closest matching tool names (token-overlap ranking handles hallucinated vendor prefixes like `forgejo_repo_search` → `search_repos`), letting the agent self-correct without a restart.
 - Timeout warning message is now terse: "Request timed out. This is a known issue on large repositories; and may still be processing or already completed. Re-trying is not needed." (URL, duration, and curl detail remain in the log file.)
 
+### Changed
+- **`forgejo_list_instances` renamed to `list_forgejo_instances`.** It was the only tool with a leading vendor prefix, which taught LLM clients a false naming pattern (hallucinated calls like `forgejo_repo_search`). The new name matches the mid-name style of `get_forgejo_version` / `get_forgejo_mcp_server_version`; MCP clients already prevent cross-server collisions with their own prefixes. Calls to the old name now return an unknown-tool error suggesting the new name.
+
+### Fixed (docs)
+- SETUP.md / TOOLS.md / README.md documented phantom `forgejo_switch_instance` and `forgejo_switch_user` tools that no longer exist (instance and user are required parameters on every call); removed.
+
 ### Added
 - `merge_pull_request` gained an optional `timeout` parameter (seconds, default 90) so merges on large repositories aren't cut off by the instance default (typically 30s). Backed by a new optional per-request timeout on `Client::post()`.
 - **Diagnostic logging** across all layers, enabled via `FORGEJO_MCP_LOG=/path/to/file` (or `--log=`), with `FORGEJO_MCP_LOG_LEVEL` (`debug`|`info`|`error`, default `debug`) and `FORGEJO_MCP_LOG_STDERR` (default on). Stdout remains protocol-only.

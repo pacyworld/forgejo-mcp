@@ -96,7 +96,7 @@ All tools accept optional `instance` and `user` parameters to target a specific 
 | `get_pull_request_by_index` | Get PR by index |
 | `create_pull_request` | Create a PR |
 | `update_pull_request` | Update PR fields |
-| `merge_pull_request` | Merge a PR (merge/rebase/squash) |
+| `merge_pull_request` | Merge a PR (merge/rebase/squash); optional `timeout` in seconds (default 90) for large repositories |
 | `list_pull_request_files` | List changed files |
 | `get_pull_request_diff` | Get unified diff (plain text) |
 

@@ -104,12 +104,13 @@ class Client
 	 *
 	 * @param  string     $endpoint API endpoint
 	 * @param  array|null $data     Request body data (JSON-encoded)
+	 * @param  int|null   $timeout  Per-request timeout in seconds (overrides the instance timeout)
 	 * @return array                Decoded JSON response
 	 * @throws ClientException
 	 */
-	public function post(string $endpoint, ?array $data = null): array
+	public function post(string $endpoint, ?array $data = null, ?int $timeout = null): array
 	{
-		return $this->request('POST', $endpoint, $data);
+		return $this->request('POST', $endpoint, $data, [], $timeout);
 	}
 
 	/**
@@ -358,10 +359,11 @@ class Client
 	 * @param  string     $endpoint API endpoint relative to /api/v1/
 	 * @param  array|null $data     Optional request body data
 	 * @param  array      $query    Optional query parameters
+	 * @param  int|null   $timeout  Per-request timeout in seconds (overrides the instance timeout)
 	 * @return array                Decoded JSON response
 	 * @throws ClientException
 	 */
-	private function request(string $method, string $endpoint, ?array $data = null, array $query = []): array
+	private function request(string $method, string $endpoint, ?array $data = null, array $query = [], ?int $timeout = null): array
 	{
 		$path = 'api/v1/' . ltrim($endpoint, '/');
 		if (!empty($query)) {
@@ -390,7 +392,7 @@ class Client
 				$response = ($this->httpClient)($method, $url, $headers, $body);
 				$result = $this->handleResponse($response['code'], $response['body'], $url);
 			} else {
-				$result = $this->enchiladaRequest($method, $path, $data, $headers);
+				$result = $this->enchiladaRequest($method, $path, $data, $headers, $timeout);
 			}
 		} catch (ClientException $e) {
 			$this->log('error', "HTTP {$method} " . self::redactUrl($url)
@@ -411,10 +413,11 @@ class Client
 	 * @param  string     $path    Full API path
 	 * @param  array|null $data    Request body
 	 * @param  array      $headers Headers
+	 * @param  int|null   $timeout Per-request timeout in seconds (overrides the instance timeout)
 	 * @return array               Decoded JSON
 	 * @throws ClientException
 	 */
-	private function enchiladaRequest(string $method, string $path, ?array $data, array $headers): array
+	private function enchiladaRequest(string $method, string $path, ?array $data, array $headers, ?int $timeout = null): array
 	{
 		try {
 			$result = $this->http->call(
@@ -422,7 +425,7 @@ class Client
 				$data,
 				$method,
 				$headers,
-				null,
+				$timeout,
 				'json'
 			);
 		} catch (\Exception $e) {
@@ -536,13 +539,9 @@ class Client
 
 		if ($errno === CURLE_OPERATION_TIMEDOUT) {
 			return new TimeoutException(
-				"Request timed out after {$this->timeout}s for {$url}. "
-				. "This is a known issue with long-running server-side operations "
-				. "(e.g. merges on large repositories); the server may still be processing "
-				. "or may have already completed the operation. "
-				. "Verify the state on the server before retrying. "
-				. "If this happens repeatedly, increase the 'timeout' value for this "
-				. "instance in instances.json.",
+				'Request timed out. This is a known issue on large repositories; '
+				. 'and may still be processing or already completed. '
+				. 'Re-trying is not needed.',
 				0
 			);
 		}

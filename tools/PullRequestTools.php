@@ -145,18 +145,19 @@ class PullRequestTools
 				'Do' => ['type' => 'string', 'description' => 'Merge method: merge, rebase, rebase-merge, squash, manually-merged'],
 				'merge_message_field' => ['type' => 'string', 'description' => 'Merge commit message'],
 				'delete_branch_after_merge' => ['type' => 'boolean', 'description' => 'Delete head branch after merge'],
+			'timeout' => ['type' => 'integer', 'description' => 'Request timeout in seconds (default 90; merges on large repositories can exceed the instance default)'],
 				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
 				'user' => ['type' => 'string', 'description' => 'User identity'],
 			],
 			'required' => ['owner', 'repo', 'index', 'Do', 'instance', 'user'],
 		]
 	)]
-	public function merge_pull_request(string $owner, string $repo, int $index, string $Do, ?string $merge_message_field = null, bool $delete_branch_after_merge = false, string $instance = '', string $user = ''): array
+	public function merge_pull_request(string $owner, string $repo, int $index, string $Do, ?string $merge_message_field = null, bool $delete_branch_after_merge = false, int $timeout = 90, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		$data = ['Do' => $Do, 'delete_branch_after_merge' => $delete_branch_after_merge];
 		if ($merge_message_field !== null) $data['merge_message_field'] = $merge_message_field;
-		return $client->post("repos/{$owner}/{$repo}/pulls/{$index}/merge", $data);
+		return $client->post("repos/{$owner}/{$repo}/pulls/{$index}/merge", $data, $timeout);
 	}
 
 	#[McpTool(

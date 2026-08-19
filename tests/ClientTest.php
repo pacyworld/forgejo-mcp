@@ -276,10 +276,12 @@ class ClientTest extends TestCase
 		$this->assertInstanceOf(\Forgejo\TimeoutException::class, $exception);
 		$this->assertInstanceOf(ClientException::class, $exception);
 		$this->assertInstanceOf(\EnchiladaMCP\ToolWarningInterface::class, $exception);
-		$this->assertStringContainsString('timed out after 30s', $exception->getMessage());
-		$this->assertStringContainsString('known issue', $exception->getMessage());
-		$this->assertStringContainsString('may have already completed', $exception->getMessage());
-		$this->assertStringContainsString('Verify the state on the server before retrying', $exception->getMessage());
+		$this->assertSame(
+			'Request timed out. This is a known issue on large repositories; '
+			. 'and may still be processing or already completed. '
+			. 'Re-trying is not needed.',
+			$exception->getMessage()
+		);
 	}
 
 	public function testTransportFailureIsLoggedAsError(): void

@@ -539,9 +539,8 @@ class Client
 
 		if ($errno === CURLE_OPERATION_TIMEDOUT) {
 			return new TimeoutException(
-				'Request timed out. This is a known issue on large repositories; '
-				. 'and may still be processing or already completed. '
-				. 'Re-trying is not needed.',
+				'Request timed out. The operation may still be processing or may have '
+				. 'already completed on the server. Do not retry unless an error was returned.',
 				0
 			);
 		}

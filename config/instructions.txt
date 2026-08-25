@@ -17,3 +17,4 @@ Key capabilities:
 Tips:
 - Pass instance and user explicitly to every tool call
 - Resources (forgejo:// URIs) provide read-only access to specific entities by URI
+- Merges on large repositories can exceed the request timeout. merge_pull_request verifies the PR state on timeout and reports 'merged' or 'in_progress' — a timeout is NOT a failure. Never retry a merge after a timeout; check get_pull_request_by_index instead.

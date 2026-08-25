@@ -10,6 +10,7 @@
 
 use EnchiladaMCP\McpTool;
 use Forgejo\InstanceManager;
+use Forgejo\TimeoutException;
 
 class PullRequestTools
 {
@@ -157,7 +158,66 @@ class PullRequestTools
 		$client = $this->manager->getClient($instance, $user);
 		$data = ['Do' => $Do, 'delete_branch_after_merge' => $delete_branch_after_merge];
 		if ($merge_message_field !== null) $data['merge_message_field'] = $merge_message_field;
-		return $client->post("repos/{$owner}/{$repo}/pulls/{$index}/merge", $data, $timeout);
+
+		try {
+			return $client->post("repos/{$owner}/{$repo}/pulls/{$index}/merge", $data, $timeout);
+		} catch (TimeoutException $e) {
+			return $this->verifyAfterMergeTimeout($client, $owner, $repo, $index);
+		}
+	}
+
+	/**
+	 * Ground a timed-out merge in the PR's actual state.
+	 *
+	 * Forgejo >= 14 continues a merge server-side after the client
+	 * disconnects (context.WithoutCancel, bounded by Git.Timeout.Default),
+	 * so a client-side timeout does NOT mean the merge failed. A cheap
+	 * follow-up GET tells the caller whether the PR is already merged or
+	 * still being processed — and in both cases that no retry is needed.
+	 *
+	 * @param  \Forgejo\Client $client API client for the instance
+	 * @param  string          $owner  Repository owner
+	 * @param  string          $repo   Repository name
+	 * @param  int             $index  PR index number
+	 * @return array                   Grounded status result
+	 */
+	private function verifyAfterMergeTimeout(\Forgejo\Client $client, string $owner, string $repo, int $index): array
+	{
+		try {
+			$pr = $client->get("repos/{$owner}/{$repo}/pulls/{$index}", [], 15);
+		} catch (\Throwable $e) {
+			return [
+				'status' => 'unknown',
+				'message' => "The merge request timed out and the follow-up status check failed ({$e->getMessage()}). "
+					. 'The merge may still be processing or may have already completed on the server. '
+					. 'Do not retry unless an error was returned. Check with get_pull_request_by_index.',
+			];
+		}
+
+		if (!empty($pr['merged'])) {
+			$sha = $pr['merge_commit_sha'] ?? null;
+			return [
+				'status' => 'merged',
+				'merged' => true,
+				'merge_commit_sha' => $sha,
+				'message' => "The merge request timed out client-side, but PR #{$index} is MERGED"
+					. ($sha ? " (commit {$sha})" : '') . '. No retry needed.',
+			];
+		}
+
+		$state = $pr['state'] ?? 'unknown';
+		$mergeable = $pr['mergeable'] ?? null;
+		return [
+			'status' => 'in_progress',
+			'merged' => false,
+			'pr_state' => $state,
+			'mergeable' => $mergeable,
+			'message' => "The merge request timed out, but this is not a failure: the server continues processing "
+				. "merges after the client disconnects. PR #{$index} is still {$state}"
+				. ($mergeable ? ' and mergeable' : '')
+				. ', so the merge is most likely still running on the server. Do NOT retry the merge. '
+				. 'Re-check with get_pull_request_by_index in a few minutes.',
+		];
 	}
 
 	#[McpTool(

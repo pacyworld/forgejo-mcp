@@ -2,6 +2,7 @@
 
 use PHPUnit\Framework\TestCase;
 use Forgejo\InstanceManager;
+use Forgejo\TimeoutException;
 use EnchiladaMCP\McpServer;
 
 require_once APPLICATION_ROOT . 'tools/PullRequestTools.php';
@@ -43,6 +44,64 @@ class PullRequestToolsTest extends TestCase
 		$this->assertSame('timeout', $param->getName());
 		$this->assertTrue($param->isOptional());
 		$this->assertSame(90, $param->getDefaultValue());
+	}
+
+	public function testMergeTimeoutVerifiesMerged(): void
+	{
+		$tools = $this->makeTools(function ($method, $url, $headers, $body) {
+			if ($method === 'POST' && str_contains($url, '/merge')) {
+				throw new TimeoutException('Request timed out.', 0);
+			}
+			if ($method === 'GET' && str_contains($url, 'pulls/5')) {
+				return ['code' => 200, 'body' => json_encode(['merged' => true, 'merge_commit_sha' => 'abc123', 'state' => 'closed'])];
+			}
+			return ['code' => 404, 'body' => '{}'];
+		});
+
+		$result = $tools->merge_pull_request('o', 'r', 5, 'merge', null, false, 90, 'test', 'me');
+
+		$this->assertSame('merged', $result['status']);
+		$this->assertTrue($result['merged']);
+		$this->assertSame('abc123', $result['merge_commit_sha']);
+		$this->assertStringContainsString('is MERGED', $result['message']);
+		$this->assertStringContainsString('No retry needed', $result['message']);
+	}
+
+	public function testMergeTimeoutVerifiesInProgress(): void
+	{
+		$tools = $this->makeTools(function ($method, $url, $headers, $body) {
+			if ($method === 'POST' && str_contains($url, '/merge')) {
+				throw new TimeoutException('Request timed out.', 0);
+			}
+			if ($method === 'GET' && str_contains($url, 'pulls/5')) {
+				return ['code' => 200, 'body' => json_encode(['merged' => false, 'state' => 'open', 'mergeable' => true])];
+			}
+			return ['code' => 404, 'body' => '{}'];
+		});
+
+		$result = $tools->merge_pull_request('o', 'r', 5, 'merge', null, false, 90, 'test', 'me');
+
+		$this->assertSame('in_progress', $result['status']);
+		$this->assertFalse($result['merged']);
+		$this->assertSame('open', $result['pr_state']);
+		$this->assertStringContainsString('not a failure', $result['message']);
+		$this->assertStringContainsString('Do NOT retry', $result['message']);
+		$this->assertStringContainsString('get_pull_request_by_index', $result['message']);
+	}
+
+	public function testMergeTimeoutCheckFailsFallsBack(): void
+	{
+		$tools = $this->makeTools(function ($method, $url, $headers, $body) {
+			if ($method === 'POST') {
+				throw new TimeoutException('Request timed out.', 0);
+			}
+			return ['code' => 500, 'body' => '{"message":"boom"}'];
+		});
+
+		$result = $tools->merge_pull_request('o', 'r', 5, 'merge', null, false, 90, 'test', 'me');
+
+		$this->assertSame('unknown', $result['status']);
+		$this->assertStringContainsString('Do not retry unless an error was returned', $result['message']);
 	}
 
 	public function testMergePullRequestSchemaExposesOptionalTimeout(): void

@@ -89,14 +89,15 @@ class Client
 	/**
 	 * Perform a GET request.
 	 *
-	 * @param  string $endpoint API endpoint (e.g., "repos/owner/repo")
-	 * @param  array  $query    Query parameters
-	 * @return array            Decoded JSON response
+	 * @param  string   $endpoint API endpoint (e.g., "repos/owner/repo")
+	 * @param  array    $query    Query parameters
+	 * @param  int|null $timeout  Per-request timeout in seconds (overrides the instance timeout)
+	 * @return array             Decoded JSON response
 	 * @throws ClientException
 	 */
-	public function get(string $endpoint, array $query = []): array
+	public function get(string $endpoint, array $query = [], ?int $timeout = null): array
 	{
-		return $this->request('GET', $endpoint, null, $query);
+		return $this->request('GET', $endpoint, null, $query, $timeout);
 	}
 
 	/**

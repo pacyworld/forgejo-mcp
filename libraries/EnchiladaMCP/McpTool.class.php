@@ -28,6 +28,8 @@ class McpTool
 	 * @param bool|null   $destructiveHint If true, tool may perform destructive updates (only meaningful when readOnlyHint is not true)
 	 * @param bool|null   $idempotentHint  If true, repeated calls with the same arguments have no additional effect
 	 * @param bool|null   $openWorldHint   If true, tool interacts with external/unbounded entities outside a closed system
+	 * @param string|null $renamedFrom     Former tool name if this tool was renamed. Not callable —
+	 *                                     metadata only; used to improve unknown-tool suggestions.
 	 *
 	 * Annotation hints follow the MCP specification's tool annotations. They are
 	 * advisory only — clients may use them to inform UX decisions (e.g. confirmation
@@ -40,6 +42,7 @@ class McpTool
 		public ?bool $readOnlyHint = null,
 		public ?bool $destructiveHint = null,
 		public ?bool $idempotentHint = null,
-		public ?bool $openWorldHint = null
+		public ?bool $openWorldHint = null,
+		public ?string $renamedFrom = null
 	) {}
 }

@@ -31,6 +31,14 @@ class ToolRegistry
 	private array $handlers = [];
 
 	/**
+	 * Rename history: former tool name => current tool name.
+	 * Metadata only (not callable); feeds unknown-tool suggestions.
+	 *
+	 * @var array<string,string>
+	 */
+	private array $renamedFrom = [];
+
+	/**
 	 * Registered resource templates indexed by URI template.
 	 *
 	 * @var array<string,array{uriTemplate:string,name:string,description:string,mimeType:string}>
@@ -106,6 +114,10 @@ class ToolRegistry
 			$this->tools[$toolName] = $tool;
 
 			$this->handlers[$toolName] = [$handler, $method->getName()];
+
+			if ($attr->renamedFrom !== null) {
+				$this->renamedFrom[$attr->renamedFrom] = $toolName;
+			}
 		}
 	}
 
@@ -222,6 +234,13 @@ class ToolRegistry
 	 */
 	public function suggestTools(string $name, int $max = 3): array
 	{
+		// Exact rename history first: a caller using a pre-rename name should
+		// always see the current name as the top suggestion.
+		$known = [];
+		if (isset($this->renamedFrom[$name])) {
+			$known[] = $this->renamedFrom[$name];
+		}
+
 		$queryTokens = explode('_', strtolower($name));
 
 		$scored = [];
@@ -247,7 +266,8 @@ class ToolRegistry
 		}
 
 		uasort($scored, fn($a, $b) => $a <=> $b);
-		return array_slice(array_keys($scored), 0, $max);
+		$ranked = array_keys($scored);
+		return array_slice(array_values(array_unique(array_merge($known, $ranked))), 0, $max);
 	}
 
 	/**

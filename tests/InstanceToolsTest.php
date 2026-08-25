@@ -28,6 +28,24 @@ class InstanceToolsTest extends TestCase
 		$this->assertArrayHasKey('me', $result['instances']['test']['users']);
 	}
 
+	public function testOldNameSuggestsNewNameFirst(): void
+	{
+		// renamedFrom metadata: a caller using the pre-rename name must see
+		// the current name as the top suggestion.
+		$server = new McpServer('test', '0.0.1');
+		$server->register(new InstanceTools($this->makeManager()));
+
+		$response = $server->handleRequest([
+			'jsonrpc' => '2.0',
+			'id' => 2,
+			'method' => 'tools/call',
+			'params' => ['name' => 'forgejo_list_instances', 'arguments' => []],
+		]);
+
+		$text = $response['result']['content'][0]['text'];
+		$this->assertStringContainsString('Closest matches: list_forgejo_instances', $text);
+	}
+
 	public function testRegisteredNameHasNoVendorPrefix(): void
 	{
 		// The tool list must not contain a leading vendor prefix — a lone

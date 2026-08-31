@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## v1.2.0 — 2026-08-31
+
+### Upgrade Notes
+- **`forgejo_list_instances` was renamed to `list_forgejo_instances`.** Update any saved prompts or scripts referencing the old name. Calls to the old name return an unknown-tool error that suggests the new name.
+- **New: durable diagnostic logging.** Set `FORGEJO_MCP_LOG=/path/to/log` in your MCP host configuration to enable it (see docs/SETUP.md). Recommended when diagnosing tool-call issues.
+- No configuration format changes; existing `instances.json` files work unchanged.
 
 ### Fixed
 - **Timeouts and transport failures no longer silently succeed.** Previously, when curl failed without an HTTP status (timeout, DNS failure, connection refused), the API client returned an empty result `[]` as if the call succeeded — e.g. a PR merge POST that timed out after 30s was reported to the agent as successful. Now such failures are surfaced with the curl error and logged. **Timeouts are returned as a normal (non-error) tool result** carrying an explanatory message: the timeout is a known issue with long-running server-side operations (e.g. merges on large repositories), the server may still have completed the operation, and state should be verified before retrying (the long-term fix is async request handling). Other transport failures (DNS, connection refused) remain errors. EnchiladaHTTP gained `getLastCurlErrno()`/`getLastCurlError()` accessors; EnchiladaMCP gained `ToolWarningInterface` — tool exceptions implementing it are returned as non-error results.

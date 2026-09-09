@@ -1,0 +1,18 @@
+{
+    "default_instance": "example",
+    "default_user": "tester",
+    "instances": {
+        "example": {
+            "url": "https://forgejo.example.invalid",
+            "description": "Offline fixture instance for transport tests",
+            "verify_ssl": true,
+            "timeout": 5,
+            "users": {
+                "tester": {
+                    "token": "not-a-real-token",
+                    "description": "Fixture user (no network calls are made)"
+                }
+            }
+        }
+    }
+}

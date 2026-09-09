@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Upgrade Notes
+- **New vendored dependency: `Enchilada\Comal`** (the event reactor) in `libraries/Enchilada/Comal/`. The stdio transport uses it on POSIX. Installing `php84-pecl-ev` is recommended — Comal then multiplexes with libev/kqueue instead of `stream_select()`.
+- **New: `--io-mode=` / `FORGEJO_MCP_IO_MODE`** (`auto`|`reactor`|`blocking`, default `auto`). `auto` selects the reactor on POSIX and blocking reads on Windows; override only when diagnosing transport behaviour.
+
+### Fixed
+- **The server no longer goes silent during long tool calls, which agent hosts interpret as a dead connection and close.** The stdio transport was a single `stream_select()` loop, so for the whole duration of a call it could not answer `ping` and never emitted `notifications/progress` — even though hosts send a `progressToken` asking for exactly that. The transport is now built on the Comal reactor and dispatches each request inside a Fiber: a tool that yields (`Liveness::await()` / `Liveness::sleep()`) lets pings be answered mid-call and keeps progress notifications flowing. Verified on FreeBSD with a ping answered **0.01s into an 8s call**.
+- **Windows startup/stall fixes.** On Windows an anonymous stdin pipe cannot be polled from PHP: `stream_select()` returns in 0ms always reporting the pipe readable, and `stream_set_blocking($pipe, false)` is a no-op so the following read blocks unbounded. The transport now uses blocking reads there, and still emits progress notifications from tools' yield points. Verified on Windows 11 / PHP 8.4.25.
+- **A stray PHP warning can no longer corrupt the protocol channel.** Several `php.ini` defaults route `display_errors` to STDOUT, which is the JSON-RPC channel; the transport now pins error display to stderr.
+- **A closed OAuth/callback stream registered with `addStream()` no longer kills the server.** PHP 8 throws a `TypeError` for closed streams passed to `stream_select()` (which `@` does not suppress); such streams are now validated and unregistered.
+- Partial `fwrite()` to stdout is looped to completion instead of silently truncating a response.
+
+### Added
+- `tests/transport-e2e.php` — drives the real `bin/forgejo-mcp` over pipes and asserts the host-facing transport contract (prompt `initialize`, protocol-only stdout, full 134-tool `tools/list`, idle responsiveness, clean EOF shutdown) in both I/O modes.
+- `tests/transport-liveness.php` — asserts pings are answered and progress flows *during* a slow call, and pins the known limitation that a non-yielding tool still starves the channel.
+
 ## v1.2.0 — 2026-08-31
 
 ### Upgrade Notes

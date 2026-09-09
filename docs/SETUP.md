@@ -126,7 +126,31 @@ Durable diagnostic logging is available via environment variables or CLI flags. 
 |-------------------------|---------------------|---------|----------------------------------------------------|
 | `FORGEJO_MCP_LOG`       | `--log=PATH`        | off     | Log file path (enables durable file logging)       |
 | `FORGEJO_MCP_LOG_LEVEL` | `--log-level=LEVEL` | `debug` | Minimum level: `debug`, `info`, or `error`         |
-| `FORGEJO_MCP_LOG_STDERR`| —                   | on      | Mirror log lines to stderr (`0` disables)          |
+| `FORGEJO_MCP_LOG_STDERR`| —                   | off     | Mirror log lines to stderr (`1` enables)           |
+| `FORGEJO_MCP_IO_MODE`   | `--io-mode=MODE`    | `auto`  | Transport I/O: `auto`, `reactor`, or `blocking`    |
+
+### Transport I/O mode
+
+`auto` is correct for every supported platform and should not normally be
+changed:
+
+- **POSIX (FreeBSD, Linux, macOS)** — `reactor`. stdin is registered with
+  the [Comal](https://git.morante.net/Enchilada/Comal) event reactor and
+  each request runs in a Fiber, so a tool that yields keeps the protocol
+  channel live: `ping` is answered and `notifications/progress` keeps
+  flowing *while the call is still running*. Install `php84-pecl-ev` to
+  get libev/kqueue multiplexing instead of the `stream_select()`
+  fallback.
+- **Windows** — `blocking`. An anonymous stdin pipe cannot be polled from
+  PHP there: `stream_select()` returns immediately always claiming the
+  pipe is readable (php-src #64770 / GH-16889), and
+  `stream_set_blocking($pipe, false)` is a no-op, so the read that
+  follows blocks for an unbounded time. Requests are handled
+  synchronously; progress notifications still flow from tools' own yield
+  points, but mid-call pings cannot be answered.
+
+Forcing `reactor` on Windows is supported only for diagnostics, and logs
+a note saying so.
 
 Example MCP host configuration with logging enabled:
 

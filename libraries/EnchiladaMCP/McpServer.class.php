@@ -635,9 +635,6 @@ class McpServer
 
 		$result = [
 			'protocolVersion' => $this->negotiatedProtocolVersion,
-			// `logging` omitted since 2026-07-28 era adoption: the capability
-			// was never exercised (no notifications/message are ever sent)
-			// and Logging is deprecated in the modern revision.
 			'capabilities' => $this->capabilityMap(),
 			'serverInfo' => $this->implementationInfo(),
 		];
@@ -658,6 +655,7 @@ class McpServer
 	{
 		$capabilities = [
 			'tools' => new \stdClass(),
+			'logging' => new \stdClass(),
 		];
 		if ($this->registry->hasResources()) {
 			$capabilities['resources'] = new \stdClass();

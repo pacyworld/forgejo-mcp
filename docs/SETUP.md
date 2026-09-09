@@ -126,7 +126,7 @@ Durable diagnostic logging is available via environment variables or CLI flags. 
 |-------------------------|---------------------|---------|----------------------------------------------------|
 | `FORGEJO_MCP_LOG`       | `--log=PATH`        | off     | Log file path (enables durable file logging)       |
 | `FORGEJO_MCP_LOG_LEVEL` | `--log-level=LEVEL` | `debug` | Minimum level: `debug`, `info`, or `error`         |
-| `FORGEJO_MCP_LOG_STDERR`| —                   | on      | Mirror log lines to stderr (`0` disables)          |
+| `FORGEJO_MCP_LOG_STDERR`| —                   | off     | Mirror log lines to stderr (`1` enables)           |
 | `FORGEJO_MCP_IO_MODE`   | `--io-mode=MODE`    | `auto`  | Transport I/O: `auto`, `reactor`, or `blocking`    |
 
 ### Transport I/O mode

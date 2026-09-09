@@ -54,11 +54,25 @@ class StdioProbe
 	/** @var resource|null Windows: read handle on that file */
 	private $stdoutReader = null;
 
+	/** @var bool Whether stderr is an undrained pipe rather than a file */
+	private bool $stderrIsPipe = false;
+
 	/**
-	 * @param string[] $args Arguments appended to the PHP invocation
+	 * @param string[]    $args        Arguments appended to the PHP invocation
+	 * @param string|null $stderrPath  Where to collect the child's stderr
+	 * @param bool        $stderrPipe  Give the child a stderr PIPE and never
+	 *                                 read it, reproducing a host that
+	 *                                 captures stderr but does not drain it.
+	 *                                 A server that writes unbounded
+	 *                                 diagnostics to stderr will wedge once
+	 *                                 the buffer fills, which presents as a
+	 *                                 startup hang. Collecting stderr into a
+	 *                                 file (the default) can never reproduce
+	 *                                 that, because files do not block.
 	 */
-	public function __construct(string $script, array $args = [], ?string $stderrPath = null)
+	public function __construct(string $script, array $args = [], ?string $stderrPath = null, bool $stderrPipe = false)
 	{
+		$this->stderrIsPipe = $stderrPipe;
 		$this->start = microtime(true);
 		$this->stderrPath = $stderrPath ?? sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'stdio-probe-' . getmypid() . '.err';
 
@@ -77,7 +91,7 @@ class StdioProbe
 		$descriptors = [
 			0 => ['pipe', 'r'],
 			1 => $onWindows ? ['file', $this->stdoutPath, 'a'] : ['pipe', 'w'],
-			2 => ['file', $this->stderrPath, 'a'],
+			2 => $stderrPipe ? ['pipe', 'w'] : ['file', $this->stderrPath, 'a'],
 		];
 
 		// bypass_shell keeps Windows from wrapping the child in cmd.exe,
@@ -257,6 +271,20 @@ class StdioProbe
 	/** Contents of the server's stderr (diagnostics live here, not stdout). */
 	public function stderr(): string
 	{
+		if ($this->stderrIsPipe) {
+			// Deliberately undrained during the test; read it only now,
+			// at teardown, so the run itself reproduces a host that
+			// never touches the stream.
+			if (!isset($this->pipes[2]) || !is_resource($this->pipes[2])) {
+				return '';
+			}
+			stream_set_blocking($this->pipes[2], false);
+			$out = '';
+			while (($c = fread($this->pipes[2], 65536)) !== false && $c !== '') {
+				$out .= $c;
+			}
+			return $out;
+		}
 		clearstatcache(true, $this->stderrPath);
 		return is_file($this->stderrPath) ? (string)file_get_contents($this->stderrPath) : '';
 	}

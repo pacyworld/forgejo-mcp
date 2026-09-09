@@ -50,7 +50,8 @@ if (!empty($missing)) {
 
 use EnchiladaMCP\Logger;
 use EnchiladaMCP\McpServer;
-use EnchiladaMCP\StdioTransport;
+use Enchilada\Tortilla\ComalEventLoop;
+use Enchilada\Tortilla\StdioTransport;
 use Forgejo\InstanceManager;
 
 // --- Configuration ---
@@ -136,6 +137,15 @@ $logger->info("Loaded {$instanceCount} instance(s) from {$configPath}");
 $server = new McpServer(APPLICATION_SLUG, APPLICATION_VERSION);
 $server->setLogger($logger);
 
+// The application owns the event loop: create it here (strict opt-in,
+// no transport-internal factory), share it with the stdio transport
+// for reactor I/O AND with the tools' HTTP path, where
+// Tortilla\HttpClient parks the dispatch fiber on it during Forgejo
+// API waits. null when Comal is not vendored (loop-agnostic degrade
+// to blocking I/O; progress then flows from HttpClient's poll loop).
+$loop = ComalEventLoop::create();
+$manager->setHttpTransport($loop, $server->tick(...));
+
 // Load instructions
 $instructionsFile = APPLICATION_CONFDIR . 'instructions.txt';
 if (file_exists($instructionsFile)) {
@@ -160,8 +170,16 @@ $logger->info("MCP server started (stdio transport)");
 
 // --- Run ---
 
-$transport = new StdioTransport($server);
+// The transport speaks primitives, not McpServer: the protocol core
+// hands over its request handler and progress emitter; the application
+// wires the reverse direction (server -> transport notifications)
+// explicitly.
+$transport = new StdioTransport($server->handleRequest(...), $server->tick(...));
 $transport->setLogger($logger);
+if ($loop !== null) {
+	$transport->setLoop($loop);      // opts into reactor I/O
+}
+$server->setNotifier($transport->sendNotification(...));
 
 // I/O mode override. 'auto' (the default) uses the Comal reactor on
 // POSIX and blocking reads on Windows, where an anonymous stdin pipe

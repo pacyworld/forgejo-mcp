@@ -144,11 +144,9 @@ class LivenessProbeTools
 
 $server = new McpServer('liveness-fixture', '1.0.0');
 
-// Composition root, matching bin/forgejo-mcp: the transport knows
-// primitives, not McpServer; the application knows both, wires the
-// reverse direction explicitly, and owns the event loop — the
-// transport never provisions one. The same loop/progress pair is
-// injected into the tools' HttpClient.
+// Composition root mirrors bin/forgejo-mcp: primitives into the
+// transport, notifier back to the server, application-owned loop
+// shared with the tools' HttpClient.
 $transport = new StdioTransport($server->handleRequest(...), $server->tick(...));
 $loop = ComalEventLoop::create();
 if (in_array('--blocking', $argv ?? [], true)) {

@@ -19,7 +19,7 @@ namespace Enchilada\Tortilla;
  * NOTE this is the one transport that genuinely requires Comal: it *is*
  * a reactor-driven HTTP server, and it spawns each dispatch as a Comal
  * Fiber task. HttpClient and StdioTransport are loop-agnostic — they
- * depend on the EventLoop port (see EventLoop.interface.php), so an
+ * depend on the EventLoop port (see EventLoop.php), so an
  * installation that only serves stdio or PHP-FPM HTTP need not vendor
  * Comal at all.
  *
@@ -124,7 +124,7 @@ class EmbeddedHttpTransport
 	 *   - port: int (default 8808)
 	 *   - token: string|null (bearer token, null to disable auth)
 	 *   - session_dir: string (default sys_get_temp_dir()/mcp-sessions)
-	 *   - allowed_origins: string[] (default []; ['*'] restores permissive CORS)
+	 *   - allowed_origins: string[] (default []; ['*'] allows any Origin)
 	 */
 	public function __construct(callable $handler, array $modernVersions, array $legacyVersions, ReactorInterface $reactor, array $options = [])
 	{

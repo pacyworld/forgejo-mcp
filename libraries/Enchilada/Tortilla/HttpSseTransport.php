@@ -111,8 +111,8 @@ class HttpSseTransport
 
 	/**
 	 * Set the browser Origin allow-list (default: refuse all requests that
-	 * carry an Origin header). Pass ['*'] to restore the pre-2026-07-28
-	 * permissive behavior.
+	 * carry an Origin header). Pass ['*'] to allow any Origin (disables
+	 * the DNS-rebinding defense).
 	 *
 	 * @param string[] $origins Accepted Origin header values, or ['*']
 	 */

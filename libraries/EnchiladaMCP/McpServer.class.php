@@ -107,9 +107,7 @@ class McpServer
 	 *
 	 * The transport wires its own write path here so the server can push
 	 * progress notifications during a long call without knowing anything
-	 * about the transport itself. Replaces the former LivenessSink
-	 * interface — a callable is the right idiom for a single-method
-	 * push callback.
+	 * about the transport itself.
 	 */
 	private ?\Closure $notifier = null;
 
@@ -159,15 +157,14 @@ class McpServer
 	}
 
 	/**
-	 * Liveness hook: emit a progress notification for the in-flight
-	 * request, throttled to one per progressThrottleSeconds.
+	 * Emit a progress notification for the in-flight request, throttled
+	 * to one per progressThrottleSeconds.
 	 *
 	 * Called by the transport's progress timer (reactor mode) and by
 	 * the Enchilada\Tortilla\HttpClient blocking-mode poll loop.
-	 * Hosts that
-	 * sent a progressToken reset their request timeout on each
-	 * notification, keeping slow calls alive; in the modern revision
-	 * (2026-07-28), where `ping` no longer exists, this is the only
+	 * Hosts that sent a progressToken reset their request timeout on
+	 * each notification, keeping slow calls alive; under protocol
+	 * revision 2026-07-28 (which removed `ping`) this is the only
 	 * liveness signal available during a call.
 	 *
 	 * Servicing inbound traffic is the transport's own concern (its

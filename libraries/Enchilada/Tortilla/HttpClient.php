@@ -34,15 +34,9 @@ namespace Enchilada\Tortilla;
  * the transport is stuck inside dispatch() and progress must come
  * from here.
  *
- * This class replaces the Liveness static bridge that lived (briefly)
- * in Enchilada/Extras: its await()/sleep() are absorbed here, its
- * tick() is the blocking-mode progress emission above, and its
- * bind()/loop() are the constructor arguments. There is intentionally
- * no yield primitive for NON-HTTP
- * waits (plain sleep, C-extension blocks) — that starvation case
- * remains the documented, test-asserted limitation it always was;
- * no production tool ever used the old facade's non-HTTP entry
- * points.
+ * There is deliberately no yield primitive for non-HTTP waits (plain
+ * sleep, C-extension blocks): that starvation case is a documented,
+ * test-asserted limitation.
  *
  * The surface mirrors \EnchiladaHTTP's call() + status accessors, so
  * existing per-verb client glue (e.g. an API client that inspects
@@ -62,9 +56,8 @@ class HttpClient
 {
 	/**
 	 * Interval (seconds) between drives of the curl_multi state
-	 * machine. Matches the cadence the retired Liveness bridge used;
-	 * tick() itself blocks up to 100ms in curl_multi_select while
-	 * handles are running, so a finer cadence buys nothing.
+	 * machine. tick() itself blocks up to 100ms in curl_multi_select
+	 * while handles are running, so a finer cadence buys nothing.
 	 */
 	private const TICK_INTERVAL = 0.05;
 

@@ -61,7 +61,7 @@ class Client
 	/**
 	 * Create a new Forgejo API client.
 	 *
-	 * @param string                          $baseUrl    Base URL (e.g., "https://codeberg.org")
+	 * @param string                          $baseUrl    Base URL (e.g., "https://forgejo.example.com")
 	 * @param string                          $token      Personal access token
 	 * @param bool                            $verifySsl  Verify SSL certificates (default: true)
 	 * @param int                             $timeout    Request timeout in seconds (default: 30)

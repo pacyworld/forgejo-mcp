@@ -223,6 +223,18 @@ class Logger
 		}
 
 		if ($this->mirrorStderr) {
+			// MCP hosts frequently capture stderr without draining it. A
+			// blocking write to a full stderr pipe would freeze the entire
+			// protocol loop (pings starve, requests time out), so mirror
+			// output is strictly best-effort: non-blocking, and dropped
+			// rather than retried when the pipe has no room.
+			static $stderrNonBlocking = null;
+			if ($stderrNonBlocking === null) {
+				$stderrNonBlocking = @stream_set_blocking(STDERR, false);
+			}
+			// When non-blocking mode is unavailable (older Windows builds)
+			// keep the historical blocking write: still correct, just not
+			// stall-proof.
 			@fwrite(STDERR, $line);
 		}
 	}

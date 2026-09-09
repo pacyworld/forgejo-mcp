@@ -14,11 +14,13 @@
  *   FORGEJO_MCP_LOG         Path to a log file (enables durable file logging)
  *   FORGEJO_MCP_LOG_LEVEL   debug|info|error (default: debug when a log file is set)
  *   FORGEJO_MCP_LOG_STDERR  Mirror log lines to STDERR (default: on; set to 0 to silence)
+ *   FORGEJO_MCP_IO_MODE     auto|reactor|blocking (default: auto)
  *
  * CLI flags:
  *   --config=PATH      Path to instances.json
  *   --log=PATH         Log file path (overrides FORGEJO_MCP_LOG)
  *   --log-level=LEVEL  debug|info|error
+ *   --io-mode=MODE     auto|reactor|blocking (transport I/O strategy)
  *
  * @package    ForgejoMCP
  * @author     Daniel Morante
@@ -58,6 +60,7 @@ $logPath = getenv('FORGEJO_MCP_LOG') ?: null;
 $logLevel = getenv('FORGEJO_MCP_LOG_LEVEL') ?: 'debug';
 $stderrEnv = getenv('FORGEJO_MCP_LOG_STDERR');
 $logStderr = ($stderrEnv === false) ? true : (bool)$stderrEnv;
+$ioMode = getenv('FORGEJO_MCP_IO_MODE') ?: null;
 
 // Check CLI arguments: --config=/path/to/instances.json, --log=/path/to/file, --log-level=debug
 foreach ($argv ?? [] as $arg) {
@@ -69,6 +72,9 @@ foreach ($argv ?? [] as $arg) {
 	}
 	if (str_starts_with($arg, '--log-level=')) {
 		$logLevel = substr($arg, 12);
+	}
+	if (str_starts_with($arg, '--io-mode=')) {
+		$ioMode = substr($arg, 10);
 	}
 }
 
@@ -151,6 +157,19 @@ $logger->info("MCP server started (stdio transport)");
 
 $transport = new StdioTransport($server);
 $transport->setLogger($logger);
+
+// I/O mode override. 'auto' (the default) uses the Comal reactor on
+// POSIX and blocking reads on Windows, where an anonymous stdin pipe
+// cannot be polled. Override only when diagnosing transport behaviour.
+if ($ioMode !== null) {
+	try {
+		$transport->setIoMode($ioMode);
+	} catch (\InvalidArgumentException $e) {
+		fwrite(STDERR, "[forgejo-mcp] ERROR: " . $e->getMessage() . "\n");
+		exit(1);
+	}
+}
+
 $transport->run();
 
 $logger->info("MCP server stopped");

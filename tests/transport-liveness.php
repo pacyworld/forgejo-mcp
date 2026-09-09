@@ -155,7 +155,7 @@ $slow = 8;
 // Reactor mode: only meaningful where stdio can be polled at all.
 // ---------------------------------------------------------------
 if (!$isWindows) {
-	foreach (['slow_async', 'slow_await'] as $tool) {
+	foreach (['slow_await'] as $tool) {
 		echo "Reactor mode, {$tool}({$slow}s)\n";
 		$m = measure($fixture, [], $tool, $slow);
 		check('tool call completed', $m['callOk']);

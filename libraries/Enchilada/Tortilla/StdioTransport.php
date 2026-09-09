@@ -1,29 +1,29 @@
 <?php
 
-namespace EnchiladaMCP;
-
-use Enchilada\Comal\ReactorFactory;
-use Enchilada\Comal\ReactorInterface;
+namespace Enchilada\Tortilla;
 
 /* Enchilada Framework 3.0
- * MCP Stdio Transport
+ * Stdio Transport
  *
  * Event-driven transport for MCP servers speaking JSON-RPC over
- * stdin/stdout. Built on the Enchilada Comal reactor, so multiplexing
- * uses kqueue (via libev/libevent) rather than a hand-rolled
- * stream_select() loop.
- *
- * Requires Comal vendored alongside this library:
- *   libraries/Enchilada/Comal/
+ * stdin/stdout. Multiplexing is delegated to an {@see EventLoop}
+ * implementation rather than a hand-rolled stream_select() loop. The
+ * caller owns the loop — matching EnchiladaHttpServer's contract: it is
+ * constructed or created by the application and injected via setLoop()
+ * (the house default adapter, ComalEventLoop::create(), is called from
+ * the composition root, never from here). run() never provisions one,
+ * and behavior never depends on which libraries happen to be vendored:
+ * with no loop, 'auto' selects blocking I/O on every platform. This
+ * transport names no concrete loop.
  *
  * Two I/O modes:
  *
- *   reactor  - stdin is a reactor read watcher; every request is
+ *   reactor  - stdin is a loop read watcher; every request is
  *              dispatched inside a Fiber. When a tool suspends at an
- *              await point (Liveness::await/sleep) the loop keeps
+ *              await point (e.g. an HttpClient wait) the loop keeps
  *              running, so `ping` is answered and progress notifications
  *              keep firing while the call is still in flight. Default on
- *              POSIX, where pipes are pollable.
+ *              POSIX, where pipes are pollable and a loop is available.
  *
  *   blocking - plain blocking line reads on stdin. Default on Windows,
  *              where no PHP-visible mechanism can poll an anonymous
@@ -36,19 +36,32 @@ use Enchilada\Comal\ReactorInterface;
  *                - and ext-ev / ext-event do not exist for Windows
  *                  (they only accept sockets in any case).
  *              Requests are handled synchronously; liveness during a
- *              call comes from progress notifications emitted via
- *              Liveness::tick()/await(), not from pings.
+ *              call comes from progress notifications emitted from the
+ *              tool's own waits (HttpClient's blocking poll), not from
+ *              pings.
  *
- * Mode 'auto' (the default) picks by platform.
+ * Mode 'auto' (the default) picks by platform, and degrades to blocking
+ * when no EventLoop implementation is available (nothing vendored, no
+ * loop injected) so a server stays servable either way.
  *
  * Tool calls are serialised: while one is in flight, further requests
  * are queued and only liveness traffic (ping, notifications/cancelled)
  * is answered out of band. Tools therefore never run concurrently with
  * each other, matching the previous single-threaded contract.
  *
- * Usage:
- *   $server = new McpServer('my-server', '1.0.0');
- *   $transport = new StdioTransport($server);
+ * The transport is protocol-agnostic: it receives primitives from the
+ * application, never a protocol-server reference. The application is
+ * the only place that knows about both sides; a typical MCP wiring is:
+ *
+ *   $server = new EnchiladaMCP\McpServer('my-server', '1.0.0');
+ *   $transport = new StdioTransport(
+ *       $server->handleRequest(...),
+ *       $server->tick(...),
+ *   );
+ *   if (($loop = ComalEventLoop::create()) !== null) {
+ *       $transport->setLoop($loop);        // opts into reactor I/O
+ *   }
+ *   $server->setNotifier($transport->sendNotification(...));
  *   $transport->run();
  *
  * Software License Agreement (BSD License)
@@ -57,13 +70,16 @@ use Enchilada\Comal\ReactorInterface;
  * All rights reserved.
  */
 
-class StdioTransport implements LivenessSink
+class StdioTransport
 {
-	/** @var McpServer */
-	private McpServer $server;
+	/** @var \Closure Handles one decoded JSON-RPC request: function(array $request): array */
+	private \Closure $handler;
 
-	/** @var ReactorInterface|null Event loop (created at run() unless injected) */
-	private ?ReactorInterface $reactor = null;
+	/** @var \Closure|null Emits a progress notification for the in-flight request: function(): void */
+	private ?\Closure $progress;
+
+	/** @var EventLoop|null Event loop (resolved at run() unless injected) */
+	private ?EventLoop $loop = null;
 
 	/** @var array<string,array{stream:resource,callback:callable,watcher:?string}> */
 	private array $additionalStreams = [];
@@ -89,17 +105,17 @@ class StdioTransport implements LivenessSink
 	/** @var bool Whether a request is currently being dispatched */
 	private bool $inFlight = false;
 
-	/** @var string|null Reactor timer emitting progress for the in-flight call */
+	/** @var string|null Loop timer emitting progress for the in-flight call */
 	private ?string $progressTimer = null;
 
-	/** @var string|null Reactor watcher for stdin */
+	/** @var string|null Loop watcher for stdin */
 	private ?string $stdinWatcher = null;
 
 	/** @var int Seconds of wire silence after which a keepalive notification
 	 *          is sent (0 = disabled) */
 	private int $keepAliveInterval = 0;
 
-	/** @var string|null Reactor timer for keepalives */
+	/** @var string|null Loop timer for keepalives */
 	private ?string $keepAliveTimer = null;
 
 	/** @var float Last time any wire traffic occurred */
@@ -117,12 +133,25 @@ class StdioTransport implements LivenessSink
 	/**
 	 * Create a new stdio transport.
 	 *
-	 * @param McpServer $server Protocol handler
+	 * The transport never types against a protocol server; the
+	 * application composes both. An MCP application passes:
+	 *
+	 * @param callable      $handler  function(array $request): array —
+	 *                                decoded JSON-RPC request in, response
+	 *                                out (e.g. McpServer::handleRequest())
+	 * @param callable|null $progress function(): void — emits a progress
+	 *                                notification for the in-flight
+	 *                                request (e.g. McpServer::tick());
+	 *                                null disables progress emission.
+	 *
+	 * The application wires the reverse direction itself where its
+	 * protocol core supports it, e.g.
+	 * `$server->setNotifier($transport->sendNotification(...))`.
 	 */
-	public function __construct(McpServer $server)
+	public function __construct(callable $handler, ?callable $progress = null)
 	{
-		$this->server = $server;
-		$server->setLivenessSink($this);
+		$this->handler = $handler(...);
+		$this->progress = $progress !== null ? $progress(...) : null;
 	}
 
 	/**
@@ -136,22 +165,32 @@ class StdioTransport implements LivenessSink
 	}
 
 	/**
-	 * Supply a preconfigured reactor (e.g. one shared with an embedded
-	 * HTTP listener, or a specific Comal backend). When omitted, run()
-	 * creates one via ReactorFactory auto-detection.
+	 * Supply the event loop that drives reactor I/O (e.g. one shared
+	 * with an embedded HTTP listener, a specific Comal backend via
+	 * ComalEventLoop::create(), or an application's own loop
+	 * implementing EventLoop). When omitted, run() uses blocking I/O;
+	 * a loop is never provisioned internally.
 	 */
-	public function setReactor(ReactorInterface $reactor): void
+	public function setLoop(EventLoop $loop): void
 	{
-		$this->reactor = $reactor;
+		$this->loop = $loop;
 	}
 
 	/**
-	 * The reactor in use, once run() has started (or one injected via
-	 * setReactor()).
+	 * The loop in use, once run() has started (or one injected via
+	 * setLoop()).
 	 */
-	public function reactor(): ?ReactorInterface
+	public function loop(): ?EventLoop
 	{
-		return $this->reactor;
+		return $this->loop;
+	}
+
+	/**
+	 * The loop in use. Alias of loop() kept for existing callers.
+	 */
+	public function reactor(): ?EventLoop
+	{
+		return $this->loop;
 	}
 
 	/**
@@ -208,7 +247,7 @@ class StdioTransport implements LivenessSink
 			'watcher' => null,
 		];
 
-		if ($this->resolvedMode === 'reactor' && $this->reactor !== null) {
+		if ($this->resolvedMode === 'reactor' && $this->loop !== null) {
 			$this->watchAdditionalStream($key);
 		} elseif ($this->resolvedMode === 'blocking' && !$this->blockingModeWarned) {
 			$this->blockingModeWarned = true;
@@ -254,25 +293,31 @@ class StdioTransport implements LivenessSink
 			// stream_select() misreports pipes and libev/libevent only
 			// accept sockets. Blocking reads are the only correct choice.
 			$mode = (\PHP_OS_FAMILY === 'Windows') ? 'blocking' : 'reactor';
+
+			// Reactor I/O needs an event loop, and the caller owns that
+			// choice (same contract as EnchiladaHttpServer): run() never
+			// provisions one. Degrade rather than refuse to start: a
+			// stdio server on blocking reads is fully functional, it
+			// just cannot answer pings mid-call.
+			if ($mode === 'reactor' && $this->loop === null) {
+				$this->log('NOTE no event loop injected; using blocking I/O. Pings are not answered during a tool call — progress notifications still are. For reactor I/O: $transport->setLoop(...) — house default is ComalEventLoop::create().');
+				$mode = 'blocking';
+			}
 		}
 		$this->resolvedMode = $mode;
 
 		if ($mode === 'reactor') {
-			// Reactor mode needs Comal. Blocking mode deliberately does
-			// not, so a host that cannot poll its stdio anyway (Windows)
-			// stays servable even where Comal is not vendored.
-			if ($this->reactor === null) {
-				if (!class_exists(ReactorFactory::class)) {
-					throw new \RuntimeException(
-						'EnchiladaMCP\\StdioTransport reactor mode requires the Enchilada Comal reactor. '
-						. 'Vendor it into libraries/Enchilada/Comal/ (git.morante.net/Enchilada/Comal), '
-						. "or call setIoMode('blocking')."
-					);
-				}
-				$this->reactor = ReactorFactory::create();
+			// Reactor mode needs a loop. Blocking mode deliberately does
+			// not, so a host that cannot poll its stdio anyway (Windows),
+			// or one with nothing vendored, stays servable.
+			if ($this->loop === null) {
+				throw new \RuntimeException(
+					"Enchilada\\Tortilla\\StdioTransport reactor mode requires an event loop. "
+					. 'Inject one via setLoop() (house default: ComalEventLoop::create()) '
+					. "or call setIoMode('blocking')."
+				);
 			}
-			$backend = class_exists(ReactorFactory::class) ? ReactorFactory::detectBackend() : 'unknown';
-			$this->log("Transport started (reactor I/O, Comal backend: {$backend})");
+			$this->log("Transport started (reactor I/O, loop: {$this->loop->backend()})");
 			if (\PHP_OS_FAMILY === 'Windows') {
 				// Measured on Windows 11 / PHP 8.4.25: stream_select() on a
 				// stdin pipe returns in 0ms always claiming it is readable,
@@ -308,7 +353,7 @@ class StdioTransport implements LivenessSink
 		if ($output === false) {
 			return;
 		}
-		$this->log('Notification (' . Logger::digest($output) . '): ' . Logger::truncate($output));
+		$this->log('Notification (' . self::digest($output) . '): ' . self::truncate($output));
 		$this->writeLine($output);
 	}
 
@@ -334,8 +379,8 @@ class StdioTransport implements LivenessSink
 	public function stop(): void
 	{
 		$this->running = false;
-		if ($this->reactor !== null && $this->resolvedMode === 'reactor') {
-			$this->reactor->stop();
+		if ($this->loop !== null && $this->resolvedMode === 'reactor') {
+			$this->loop->stop();
 		}
 	}
 
@@ -356,9 +401,8 @@ class StdioTransport implements LivenessSink
 	private function runReactor(): void
 	{
 		stream_set_blocking(STDIN, false);
-		Liveness::setReactor($this->reactor);
 
-		$this->stdinWatcher = $this->reactor->onReadable(STDIN, function ($stream) {
+		$this->stdinWatcher = $this->loop->onReadable(STDIN, function ($stream) {
 			$this->onStdinReadable($stream);
 		});
 
@@ -367,31 +411,31 @@ class StdioTransport implements LivenessSink
 		}
 
 		if ($this->keepAliveInterval > 0) {
-			$this->keepAliveTimer = $this->reactor->repeat(1.0, function () {
+			$this->keepAliveTimer = $this->loop->repeat(1.0, function () {
 				$this->maybeKeepAlive();
 			});
 		}
 
-		try {
-			$this->reactor->run();
-		} finally {
-			Liveness::setReactor(null);
-		}
+		$this->loop->run();
 	}
 
 	/**
 	 * Blocking line-read loop (Windows default). Requests are handled
-	 * synchronously; Liveness::tick()/await() still emit progress from
-	 * inside long tool calls.
+	 * synchronously; progress notifications still flow from inside long
+	 * tool calls via the waits of a loop-aware client (HttpClient's
+	 * blocking poll invokes the injected progress callable).
 	 */
 	private function runBlocking(): void
 	{
 		stream_set_blocking(STDIN, true);
 
-		// No loop is running while we block in fgets(), so awaits must
-		// use their synchronous fallback rather than suspending.
-		Liveness::setReactor(null);
-
+		// Mid-call pings cannot be answered in this mode (nothing can
+		// read stdin while dispatch runs), and protocol revision
+		// 2026-07-28 removed `ping`, so notifications/progress is the
+		// only liveness signal a modern host gets during a slow call.
+		// That signal flows from the tool's own HTTP waits, not from
+		// the transport — the transport is stuck in dispatch() and has
+		// no loop to run a progress timer on.
 		while ($this->running) {
 			if (function_exists('pcntl_signal_dispatch')) {
 				pcntl_signal_dispatch();
@@ -426,8 +470,9 @@ class StdioTransport implements LivenessSink
 				$this->stopProgressTracking();
 			}
 
-			// Anything that arrived mid-call was not queued in this mode
-			// (nothing could read it), so there is no backlog to drain.
+			// Anything that arrived mid-call was not queued in this
+			// mode (nothing could read it), so there is no backlog
+			// to drain.
 		}
 	}
 
@@ -482,8 +527,8 @@ class StdioTransport implements LivenessSink
 
 		if ($this->inFlight) {
 			// Liveness traffic during a suspended call: answer inline.
-			// McpServer keeps the in-flight call's progress state intact
-			// for these methods.
+			// The protocol handler keeps the in-flight call's progress
+			// state intact for these methods.
 			$this->log("Answering {$method} during in-flight call");
 			$this->dispatch($request);
 			return;
@@ -511,8 +556,8 @@ class StdioTransport implements LivenessSink
 				$this->inFlight = false;
 				// Drain on a fresh loop turn: draining here would nest
 				// dispatches inside this fiber's stack.
-				if ($this->running && !empty($this->pending) && $this->reactor !== null) {
-					$this->reactor->delay(0.0, function () {
+				if ($this->running && !empty($this->pending) && $this->loop !== null) {
+					$this->loop->delay(0.0, function () {
 						$this->drainPending();
 					});
 				}
@@ -547,14 +592,15 @@ class StdioTransport implements LivenessSink
 	 */
 	private function dispatch(array $request): void
 	{
-		// Defense-in-depth: McpServer::handleRequest() already catches
-		// \Throwable internally and converts failures to JSON-RPC/tool
-		// error responses. This outer guard exists so that a future
-		// change to McpServer, or any error occurring outside that
-		// guarded region (e.g. response serialization), can never take
-		// down the whole transport.
+		// Defense-in-depth: a well-behaved handler (e.g.
+		// McpServer::handleRequest()) already catches \Throwable
+		// internally and converts failures to JSON-RPC/tool error
+		// responses. This outer guard exists so that a future change to
+		// the handler, or any error occurring outside that guarded
+		// region (e.g. response serialization), can never take down the
+		// whole transport.
 		try {
-			$response = $this->server->handleRequest($request);
+			$response = ($this->handler)($request);
 		} catch (\Throwable $e) {
 			$this->log('Unhandled exception in handleRequest: ' . $e->getMessage());
 			$response = [
@@ -576,7 +622,7 @@ class StdioTransport implements LivenessSink
 			$this->log('Failed to encode response: ' . json_last_error_msg());
 			return;
 		}
-		$this->log('Sending (' . Logger::digest($output) . '): ' . Logger::truncate($output));
+		$this->log('Sending (' . self::digest($output) . '): ' . self::truncate($output));
 		$this->writeLine($output);
 	}
 
@@ -587,11 +633,11 @@ class StdioTransport implements LivenessSink
 	 */
 	private function decode(string $line): ?array
 	{
-		$this->log('Received (' . Logger::digest($line) . '): ' . Logger::truncate($line));
+		$this->log('Received (' . self::digest($line) . '): ' . self::truncate($line));
 
 		$request = json_decode($line, true);
 		if (!is_array($request)) {
-			$this->log('Invalid JSON received (' . json_last_error_msg() . ', ' . Logger::digest($line) . ')');
+			$this->log('Invalid JSON received (' . json_last_error_msg() . ', ' . self::digest($line) . ')');
 			return null;
 		}
 		return $request;
@@ -605,11 +651,11 @@ class StdioTransport implements LivenessSink
 	 */
 	private function startProgressTracking(): void
 	{
-		if ($this->resolvedMode !== 'reactor' || $this->reactor === null) {
+		if ($this->resolvedMode !== 'reactor' || $this->loop === null || $this->progress === null) {
 			return;
 		}
-		$this->progressTimer = $this->reactor->repeat(1.0, function () {
-			$this->server->tick();
+		$this->progressTimer = $this->loop->repeat(1.0, function () {
+			($this->progress)();
 		});
 	}
 
@@ -618,8 +664,8 @@ class StdioTransport implements LivenessSink
 	 */
 	private function stopProgressTracking(): void
 	{
-		if ($this->progressTimer !== null && $this->reactor !== null) {
-			$this->reactor->cancel($this->progressTimer);
+		if ($this->progressTimer !== null && $this->loop !== null) {
+			$this->loop->cancel($this->progressTimer);
 		}
 		$this->progressTimer = null;
 	}
@@ -629,7 +675,7 @@ class StdioTransport implements LivenessSink
 	 */
 	private function watchAdditionalStream(string $key): void
 	{
-		if (!isset($this->additionalStreams[$key]) || $this->reactor === null) {
+		if (!isset($this->additionalStreams[$key]) || $this->loop === null) {
 			return;
 		}
 		$entry = $this->additionalStreams[$key];
@@ -641,7 +687,7 @@ class StdioTransport implements LivenessSink
 			unset($this->additionalStreams[$key]);
 			return;
 		}
-		$this->additionalStreams[$key]['watcher'] = $this->reactor->onReadable(
+		$this->additionalStreams[$key]['watcher'] = $this->loop->onReadable(
 			$entry['stream'],
 			function ($stream) use ($key) {
 				$entry = $this->additionalStreams[$key] ?? null;
@@ -663,8 +709,8 @@ class StdioTransport implements LivenessSink
 	private function unwatchAdditionalStream(string $key): void
 	{
 		$watcher = $this->additionalStreams[$key]['watcher'] ?? null;
-		if ($watcher !== null && $this->reactor !== null) {
-			$this->reactor->cancel($watcher);
+		if ($watcher !== null && $this->loop !== null) {
+			$this->loop->cancel($watcher);
 			$this->additionalStreams[$key]['watcher'] = null;
 		}
 	}
@@ -763,6 +809,29 @@ class StdioTransport implements LivenessSink
 	private function noteWire(): void
 	{
 		$this->lastWireAt = microtime(true);
+	}
+
+	/**
+	 * SHA-256 payload fingerprint for log lines — "len=N sha256=...".
+	 * Mirrors EnchiladaMCP\Logger::digest() so this library stays free
+	 * of any MCP/ dependency; the digest allows byte-exactness
+	 * verification without writing payload material to the log.
+	 */
+	private static function digest(string $data): string
+	{
+		return 'len=' . strlen($data) . ' sha256=' . hash('sha256', $data);
+	}
+
+	/**
+	 * Truncate a string for single-line log output.
+	 * Mirrors EnchiladaMCP\Logger::truncate().
+	 */
+	private static function truncate(string $text, int $maxLength = 200): string
+	{
+		if (strlen($text) <= $maxLength) {
+			return $text;
+		}
+		return substr($text, 0, $maxLength) . '...';
 	}
 
 	/**

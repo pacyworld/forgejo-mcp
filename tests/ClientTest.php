@@ -261,12 +261,12 @@ class ClientTest extends TestCase
 	{
 		$client = $this->makeClient(fn() => ['code' => 200, 'body' => '{}']);
 
-		// Simulate EnchiladaHTTP state after CURLE_OPERATION_TIMEDOUT (28)
+		// Simulate Tortilla\HttpClient state after CURLE_OPERATION_TIMEDOUT (28)
 		$clientRef = new \ReflectionProperty(Client::class, 'http');
 		$http = $clientRef->getValue($client);
-		$errnoRef = new \ReflectionProperty(\EnchiladaHTTP::class, 'last_curl_errno');
+		$errnoRef = new \ReflectionProperty(\Enchilada\Tortilla\HttpClient::class, 'lastCurlErrno');
 		$errnoRef->setValue($http, 28);
-		$errorRef = new \ReflectionProperty(\EnchiladaHTTP::class, 'last_curl_error');
+		$errorRef = new \ReflectionProperty(\Enchilada\Tortilla\HttpClient::class, 'lastCurlError');
 		$errorRef->setValue($http, 'Operation timed out after 30000 milliseconds');
 
 		$method = new \ReflectionMethod(Client::class, 'transportError');

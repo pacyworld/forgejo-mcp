@@ -102,8 +102,14 @@ class McpServer
 	/** @var callable|null Optional logger: function(string $message): void */
 	private $logger = null;
 
-	/** @var LivenessSink|null Transport used for liveness traffic during long calls */
-	private ?LivenessSink $livenessSink = null;
+	/**
+	 * Notification writer: function(string $method, array $params): void.
+	 *
+	 * The transport wires its own write path here so the server can push
+	 * progress notifications during a long call without knowing anything
+	 * about the transport itself.
+	 */
+	private ?\Closure $notifier = null;
 
 	/**
 	 * @var string|int|float|null progressToken of the request currently being
@@ -133,28 +139,32 @@ class McpServer
 			'name' => $name,
 			'version' => $version,
 		];
-		Liveness::register($this);
 	}
 
 	/**
-	 * Attach the transport that liveness traffic flows through during
-	 * long-running requests. Called automatically by StdioTransport's
-	 * constructor; only needed explicitly for other transport types.
+	 * Wire the notification writer — a callable that pushes a JSON-RPC
+	 * notification to the client.
+	 *
+	 * The application wires the transport's write path here (e.g.
+	 * Enchilada\Tortilla\StdioTransport's sendNotification). The
+	 * server never knows what kind of transport it is talking through.
+	 *
+	 * @param callable $notifier function(string $method, array $params): void
 	 */
-	public function setLivenessSink(LivenessSink $sink): void
+	public function setNotifier(callable $notifier): void
 	{
-		$this->livenessSink = $sink;
+		$this->notifier = $notifier(...);
 	}
 
 	/**
-	 * Liveness hook: emit a progress notification for the in-flight
-	 * request, throttled to one per progressThrottleSeconds.
+	 * Emit a progress notification for the in-flight request, throttled
+	 * to one per progressThrottleSeconds.
 	 *
 	 * Called by the transport's progress timer (reactor mode) and by
-	 * Liveness::tick() from tool code that cannot suspend. Hosts that
-	 * sent a progressToken reset their request timeout on each
-	 * notification, keeping slow calls alive; in the modern revision
-	 * (2026-07-28), where `ping` no longer exists, this is the only
+	 * the Enchilada\Tortilla\HttpClient blocking-mode poll loop.
+	 * Hosts that sent a progressToken reset their request timeout on
+	 * each notification, keeping slow calls alive; under protocol
+	 * revision 2026-07-28 (which removed `ping`) this is the only
 	 * liveness signal available during a call.
 	 *
 	 * Servicing inbound traffic is the transport's own concern (its
@@ -164,7 +174,7 @@ class McpServer
 	 */
 	public function tick(): void
 	{
-		if ($this->livenessSink === null) {
+		if ($this->notifier === null) {
 			return;
 		}
 
@@ -178,7 +188,7 @@ class McpServer
 		$this->lastProgressAt = $now;
 		$elapsed = round($now - $this->activeRequestStartedAt, 1);
 		try {
-			$this->livenessSink->sendNotification('notifications/progress', [
+			($this->notifier)('notifications/progress', [
 				'progressToken' => $this->activeProgressToken,
 				'progress' => $elapsed,
 				'message' => "in progress ({$elapsed}s elapsed)",
@@ -460,10 +470,11 @@ class McpServer
 		$params = $request['params'] ?? [];
 
 		// Track the progressToken of the dispatched request so the
-		// transport's progress timer (and Liveness::tick()) can keep the
-		// host's timeout reset while it runs. Liveness traffic is exempt:
-		// it is answered out of band while a call is still in flight and
-		// must not clobber that call's progress state.
+		// transport's progress timer (and Tortilla HttpClient's
+		// blocking-mode poll) can keep the host's timeout reset while it
+		// runs. Liveness traffic is exempt: it is answered out of band
+		// while a call is still in flight and must not clobber that
+		// call's progress state.
 		$trackProgress = !in_array($method, ['ping', 'notifications/cancelled'], true);
 		if ($trackProgress) {
 			$token = $params['_meta']['progressToken'] ?? null;

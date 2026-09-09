@@ -3,7 +3,12 @@
  * Forgejo MCP Server — API Client
  *
  * HTTP client for the Forgejo REST API.
- * Uses EnchiladaHTTP for HTTP transport with token-based authentication.
+ * Uses Enchilada\Tortilla\HttpClient (loop-aware facade over
+ * EnchiladaMultiHTTP) for HTTP transport with token-based
+ * authentication. When an EventLoop is injected and the caller runs
+ * inside a transport dispatch fiber, API waits park the fiber instead
+ * of blocking the server; otherwise the client's poll loop keeps
+ * progress notifications flowing during long waits (Windows stdio).
  *
  * @package    ForgejoMCP\Forgejo
  * @author     Daniel Morante
@@ -12,6 +17,14 @@
  */
 
 namespace Forgejo;
+
+// EnchiladaMultiHTTP lives in the HTTP/ library directory but the
+// class name matches no vendored file or directory name, so the
+// framework autoloader's guess patterns miss it and spl_autoload
+// lowercases on case-sensitive filesystems.
+if (!class_exists('EnchiladaMultiHTTP', false)) {
+	require_once dirname(__DIR__, 2) . '/libraries/HTTP/EnchiladaMultiHTTP.class.php';
+}
 
 class Client
 {
@@ -24,8 +37,8 @@ class Client
 	/** @var string API access token */
 	private string $token;
 
-	/** @var \EnchiladaHTTP */
-	private \EnchiladaHTTP $http;
+	/** @var \Enchilada\Tortilla\HttpClient Loop-aware HTTP transport */
+	private \Enchilada\Tortilla\HttpClient $http;
 
 	/** @var bool */
 	private bool $verifySsl;
@@ -48,18 +61,24 @@ class Client
 	/**
 	 * Create a new Forgejo API client.
 	 *
-	 * @param string        $baseUrl    Base URL (e.g., "https://codeberg.org")
-	 * @param string        $token      Personal access token
-	 * @param bool          $verifySsl  Verify SSL certificates (default: true)
-	 * @param int           $timeout    Request timeout in seconds (default: 30)
-	 * @param callable|null $httpClient Optional HTTP callable for testing
+	 * @param string                          $baseUrl    Base URL (e.g., "https://forgejo.example.com")
+	 * @param string                          $token      Personal access token
+	 * @param bool                            $verifySsl  Verify SSL certificates (default: true)
+	 * @param int                             $timeout    Request timeout in seconds (default: 30)
+	 * @param callable|null                   $httpClient Optional HTTP callable for testing
+	 * @param \Enchilada\Tortilla\EventLoop|null $loop    Event loop shared with the stdio transport;
+	 *                                                    API waits park the dispatch fiber on it
+	 * @param callable|null                   $progress   function(): void — emits a progress
+	 *                                                    notification during blocking-mode API waits
 	 */
 	public function __construct(
 		string $baseUrl,
 		string $token,
 		bool $verifySsl = true,
 		int $timeout = 30,
-		?callable $httpClient = null
+		?callable $httpClient = null,
+		?\Enchilada\Tortilla\EventLoop $loop = null,
+		?callable $progress = null
 	) {
 		$this->baseUrl = rtrim($baseUrl, '/');
 		$this->token = $token;
@@ -67,9 +86,10 @@ class Client
 		$this->timeout = $timeout;
 		$this->httpClient = $httpClient;
 
-		$this->http = new \EnchiladaHTTP($this->baseUrl);
-		$this->http->setTimeout($timeout);
-		$this->http->setVerifySsl($verifySsl);
+		$multi = new \EnchiladaMultiHTTP($this->baseUrl);
+		$multi->setTimeout($timeout);
+		$multi->setVerifySsl($verifySsl);
+		$this->http = new \Enchilada\Tortilla\HttpClient($multi, $loop, $progress);
 	}
 
 	/**

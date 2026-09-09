@@ -1,21 +1,31 @@
 <?php
 
-namespace EnchiladaMCP;
+namespace Enchilada\Tortilla;
 
 /* Enchilada Framework 3.0
- * MCP Streamable HTTP Transport
+ * Streamable HTTP Transport
  *
- * Request handler for MCP servers communicating over Streamable HTTP
+ * Request handler for JSON-RPC servers communicating over Streamable HTTP
  * with optional SSE framing. Implements the MCP specification (2025-03-26)
  * for HTTP-based communication.
  *
  * Handles CORS, session management, content negotiation (JSON vs SSE),
- * protocol version validation, and request routing to the McpServer.
+ * protocol version validation, and request routing to the handler.
+ * TYPE-decoupled from the protocol core — it receives primitives from
+ * the application, never an MCP-class reference — but NOT policy-free:
+ * the era rules, session semantics and header vocabulary it enforces
+ * (MCP-Protocol-Version, Mcp-Method, Mcp-Name, MCP-Session-Id) come from
+ * the MCP spec text. Splitting that policy out of the wire mechanics is
+ * deferred (see the plan's "HTTP transport policy de-duplication").
  *
  * Usage:
- *   $server = new McpServer('my-server', '1.0.0');
+ *   $server = new EnchiladaMCP\McpServer('my-server', '1.0.0');
  *   $server->register($myTools);
- *   $transport = new HttpSseTransport($server);
+ *   $transport = new HttpSseTransport(
+ *       $server->handleRequest(...),
+ *       $server->modernVersions(),
+ *       $server->legacyVersions(),
+ *   );
  *   $transport->handle();
  *
  * @see https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#streamable-http
@@ -51,8 +61,14 @@ namespace EnchiladaMCP;
 
 class HttpSseTransport
 {
-	/** @var McpServer */
-	private McpServer $server;
+	/** @var \Closure Handles one decoded JSON-RPC request: function(array $request): array */
+	private \Closure $handler;
+
+	/** @var string[] Modern-era (per-request metadata, stateless) revisions accepted. */
+	private array $modernVersions;
+
+	/** @var string[] Handshake-era (initialize-based) versions accepted. */
+	private array $legacyVersions;
 
 	/** @var string Directory for session token files. */
 	private string $sessionDir;
@@ -72,19 +88,31 @@ class HttpSseTransport
 	/**
 	 * Create a new HTTP SSE transport.
 	 *
-	 * @param McpServer   $server     Protocol handler with tools registered
-	 * @param string|null $sessionDir Session token directory (default: sys_get_temp_dir()/mcp-sessions)
+	 * The transport never types against a protocol server; the
+	 * application composes both. An MCP application passes:
+	 *
+	 * @param callable    $handler        function(array $request): array —
+	 *                                    decoded JSON-RPC request in,
+	 *                                    response out (e.g.
+	 *                                    McpServer::handleRequest())
+	 * @param string[]    $modernVersions Modern-era revisions accepted
+	 *                                    (e.g. McpServer::modernVersions())
+	 * @param string[]    $legacyVersions Handshake-era revisions accepted
+	 *                                    (e.g. McpServer::legacyVersions())
+	 * @param string|null $sessionDir     Session token directory (default: sys_get_temp_dir()/mcp-sessions)
 	 */
-	public function __construct(McpServer $server, ?string $sessionDir = null)
+	public function __construct(callable $handler, array $modernVersions, array $legacyVersions, ?string $sessionDir = null)
 	{
-		$this->server = $server;
+		$this->handler = $handler(...);
+		$this->modernVersions = $modernVersions;
+		$this->legacyVersions = $legacyVersions;
 		$this->sessionDir = $sessionDir ?? sys_get_temp_dir() . '/mcp-sessions';
 	}
 
 	/**
 	 * Set the browser Origin allow-list (default: refuse all requests that
-	 * carry an Origin header). Pass ['*'] to restore the pre-2026-07-28
-	 * permissive behavior.
+	 * carry an Origin header). Pass ['*'] to allow any Origin (disables
+	 * the DNS-rebinding defense).
 	 *
 	 * @param string[] $origins Accepted Origin header values, or ['*']
 	 */
@@ -111,7 +139,7 @@ class HttpSseTransport
 	 * Handle the current HTTP request.
 	 *
 	 * Reads the request method, validates headers, dispatches to the
-	 * McpServer, and writes the response as JSON or SSE depending on
+	 * request handler, and writes the response as JSON or SSE depending on
 	 * the client's Accept header. Terminates the PHP process via exit.
 	 */
 	public function handle(): void
@@ -190,7 +218,7 @@ class HttpSseTransport
 		// in body _meta and must have matching metadata headers validated
 		// against it (Mcp-Method/Mcp-Name, -32020 on mismatch). Sessions do
 		// not exist for modern requests — Mcp-Session-Id is ignored.
-		$modern = $this->server->isModernRequest($request);
+		$modern = RequestEra::isModern($request, $this->modernVersions);
 
 		if ($modern) {
 			if (!$this->validateModernHeaders($request)) {
@@ -208,13 +236,13 @@ class HttpSseTransport
 
 		// Handle notifications (no id): return 202 Accepted
 		if (!$hasId) {
-			$this->server->handleRequest($request);
+			($this->handler)($request);
 			http_response_code(202);
 			exit;
 		}
 
 		// Handle JSON-RPC request
-		$response = $this->server->handleRequest($request);
+		$response = ($this->handler)($request);
 
 		// Post-processing hook for tools/call
 		if ($rpcMethod === 'tools/call' && $this->afterToolsCall !== null) {
@@ -277,11 +305,11 @@ class HttpSseTransport
 	private function validateModernHeaders(array $request): bool
 	{
 		$fail = function (string $detail): bool {
-			$this->sendJsonError(McpServer::ERR_HEADER_MISMATCH, 'Header mismatch: ' . $detail, 400);
+			$this->sendJsonError(RequestEra::ERR_HEADER_MISMATCH, 'Header mismatch: ' . $detail, 400);
 			return false;
 		};
 
-		$declared = McpServer::declaredVersionOf($request);
+		$declared = RequestEra::declaredVersionOf($request);
 		$headerVersion = $_SERVER['HTTP_MCP_PROTOCOL_VERSION'] ?? null;
 		if ($headerVersion === null || $headerVersion !== $declared) {
 			return $fail("MCP-Protocol-Version header ('" . ($headerVersion ?? '(missing)') . "') does not match the _meta protocolVersion ('{$declared}')");
@@ -294,7 +322,7 @@ class HttpSseTransport
 		}
 
 		if (in_array($bodyMethod, ['tools/call', 'resources/read', 'prompts/get'], true)) {
-			[$ok, $nameValue] = McpServer::decodeSentinelHeaderValue($_SERVER['HTTP_MCP_NAME'] ?? null);
+			[$ok, $nameValue] = RequestEra::decodeSentinelHeaderValue($_SERVER['HTTP_MCP_NAME'] ?? null);
 			if (!$ok) {
 				return $fail('Mcp-Name header is missing or malformed');
 			}
@@ -371,14 +399,14 @@ class HttpSseTransport
 		// A modern-era header on a request the era check already classified
 		// as legacy (no modern _meta) contradicts the body — the header
 		// value MUST match the _meta field, so this is a HeaderMismatch.
-		if (in_array($protoVersion, $this->server->modernVersions(), true)) {
-			$this->sendJsonError(McpServer::ERR_HEADER_MISMATCH, 'Header mismatch: MCP-Protocol-Version declares ' . $protoVersion . ' but the request body carries no matching _meta protocolVersion', 400);
+		if (in_array($protoVersion, $this->modernVersions, true)) {
+			$this->sendJsonError(RequestEra::ERR_HEADER_MISMATCH, 'Header mismatch: MCP-Protocol-Version declares ' . $protoVersion . ' but the request body carries no matching _meta protocolVersion', 400);
 			return false;
 		}
 
-		// Legacy-era acceptance list sourced from the server (with
+		// Legacy-era acceptance list supplied by the application (with
 		// 2024-11-05 grandfathered: transport-only tolerance kept).
-		$legacy = array_merge($this->server->legacyVersions(), ['2024-11-05']);
+		$legacy = array_merge($this->legacyVersions, ['2024-11-05']);
 		if (!in_array($protoVersion, $legacy, true)) {
 			$this->sendJsonError(-32600, 'Unsupported MCP-Protocol-Version', 400);
 			return false;

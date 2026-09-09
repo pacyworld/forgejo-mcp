@@ -1,23 +1,39 @@
 <?php
 
-namespace EnchiladaMCP;
+namespace Enchilada\Tortilla;
 
 /* Enchilada Framework 3.0
- * MCP Embedded HTTP Transport (Reactor-Driven)
+ * Embedded HTTP Transport (Reactor-Driven)
  *
- * Runs an MCP Streamable HTTP endpoint inside a long-running process
- * using EnchiladaHttpServer and a Comal reactor. Handles MCP-specific
- * concerns: JSON-RPC routing, session management, bearer token auth,
- * CORS, and SSE/JSON content negotiation.
+ * Runs a JSON-RPC Streamable HTTP endpoint inside a long-running
+ * process using EnchiladaHttpServer and a Comal reactor. Handles
+ * transport concerns: JSON-RPC routing, session management, bearer
+ * token auth, CORS, and SSE/JSON content negotiation.
+ *
+ * TYPE-decoupled from the protocol core (primitives only, no MCP-class
+ * reference) but NOT policy-free: the session/header/era rules come
+ * from the MCP Streamable HTTP spec. Splitting that policy out of the
+ * wire mechanics is deferred (see the plan's "HTTP transport policy
+ * de-duplication").
+ *
+ * NOTE this is the one transport that genuinely requires Comal: it *is*
+ * a reactor-driven HTTP server, and it spawns each dispatch as a Comal
+ * Fiber task. HttpClient and StdioTransport are loop-agnostic — they
+ * depend on the EventLoop port (see EventLoop.php), so an
+ * installation that only serves stdio or PHP-FPM HTTP need not vendor
+ * Comal at all.
  *
  * Usage:
- *   $mcpServer = new McpServer('sonya', '1.0.0');
+ *   $mcpServer = new EnchiladaMCP\McpServer('sonya', '1.0.0');
  *   $mcpServer->register($myTools);
  *
- *   $transport = new EmbeddedHttpTransport($mcpServer, $reactor, [
- *       'port' => 8808,
- *       'token' => 'my-secret',
- *   ]);
+ *   $transport = new EmbeddedHttpTransport(
+ *       $mcpServer->handleRequest(...),
+ *       $mcpServer->modernVersions(),
+ *       $mcpServer->legacyVersions(),
+ *       $reactor,
+ *       ['port' => 8808, 'token' => 'my-secret'],
+ *   );
  *   $transport->listen();
  *   $reactor->run();
  *
@@ -55,8 +71,14 @@ use Enchilada\Comal\ReactorInterface;
 
 class EmbeddedHttpTransport
 {
-	/** @var McpServer */
-	private McpServer $server;
+	/** @var \Closure Handles one decoded JSON-RPC request: function(array $request): array */
+	private \Closure $handler;
+
+	/** @var string[] Modern-era (per-request metadata, stateless) revisions accepted. */
+	private array $modernVersions;
+
+	/** @var string[] Handshake-era (initialize-based) versions accepted. */
+	private array $legacyVersions;
 
 	/** @var ReactorInterface */
 	private ReactorInterface $reactor;
@@ -83,20 +105,32 @@ class EmbeddedHttpTransport
 	private $logger = null;
 
 	/**
-	 * Create a new embedded MCP HTTP transport.
+	 * Create a new embedded HTTP transport.
 	 *
-	 * @param McpServer        $server  MCP protocol handler with tools registered
-	 * @param ReactorInterface $reactor Event loop for I/O
-	 * @param array            $options Configuration:
+	 * The transport never types against a protocol server; the
+	 * application composes both. An MCP application passes:
+	 *
+	 * @param callable         $handler        function(array $request): array —
+	 *                                         decoded JSON-RPC request in,
+	 *                                         response out (e.g.
+	 *                                         McpServer::handleRequest())
+	 * @param string[]         $modernVersions Modern-era revisions accepted
+	 *                                         (e.g. McpServer::modernVersions())
+	 * @param string[]         $legacyVersions Handshake-era revisions accepted
+	 *                                         (e.g. McpServer::legacyVersions())
+	 * @param ReactorInterface $reactor        Event loop for I/O
+	 * @param array            $options        Configuration:
 	 *   - host: string (default '0.0.0.0')
 	 *   - port: int (default 8808)
 	 *   - token: string|null (bearer token, null to disable auth)
 	 *   - session_dir: string (default sys_get_temp_dir()/mcp-sessions)
-	 *   - allowed_origins: string[] (default []; ['*'] restores permissive CORS)
+	 *   - allowed_origins: string[] (default []; ['*'] allows any Origin)
 	 */
-	public function __construct(McpServer $server, ReactorInterface $reactor, array $options = [])
+	public function __construct(callable $handler, array $modernVersions, array $legacyVersions, ReactorInterface $reactor, array $options = [])
 	{
-		$this->server = $server;
+		$this->handler = $handler(...);
+		$this->modernVersions = $modernVersions;
+		$this->legacyVersions = $legacyVersions;
 		$this->reactor = $reactor;
 		$this->token = $options['token'] ?? null;
 		$this->sessionDir = $options['session_dir'] ?? sys_get_temp_dir() . '/mcp-sessions';
@@ -228,7 +262,7 @@ class EmbeddedHttpTransport
 		// in body _meta and must have matching metadata headers validated
 		// against it (Mcp-Method/Mcp-Name, -32020 on mismatch). Sessions do
 		// not exist for modern requests — Mcp-Session-Id is ignored.
-		$modern = $this->server->isModernRequest($request);
+		$modern = RequestEra::isModern($request, $this->modernVersions);
 
 		if ($modern) {
 			if (!$this->validateModernHeaders($request, $req, $res)) {
@@ -246,7 +280,7 @@ class EmbeddedHttpTransport
 
 		// Handle notifications (no id): return 202 Accepted
 		if (!$hasId) {
-			$this->server->handleRequest($request);
+			($this->handler)($request);
 			$res->setStatus(202);
 			$res->send();
 			return;
@@ -257,7 +291,7 @@ class EmbeddedHttpTransport
 		// suspend without freezing the reactor. Tools that use plain
 		// synchronous I/O continue to work unchanged.
 		\Enchilada\Comal\Async\spawn($this->reactor, function () use ($request, $req, $res, $isInitialize, $modern) {
-			$response = $this->server->handleRequest($request);
+			$response = ($this->handler)($request);
 
 			// Create session on successful initialize (legacy era only —
 			// the modern revision has no protocol-level sessions to mint).
@@ -314,12 +348,12 @@ class EmbeddedHttpTransport
 			$res->setStatus(400);
 			$res->json([
 				'jsonrpc' => '2.0',
-				'error' => ['code' => McpServer::ERR_HEADER_MISMATCH, 'message' => 'Header mismatch: ' . $detail],
+				'error' => ['code' => RequestEra::ERR_HEADER_MISMATCH, 'message' => 'Header mismatch: ' . $detail],
 			]);
 			return false;
 		};
 
-		$declared = McpServer::declaredVersionOf($request);
+		$declared = RequestEra::declaredVersionOf($request);
 		$headerVersion = $req->getHeader('mcp-protocol-version');
 		if ($headerVersion === null || $headerVersion !== $declared) {
 			return $fail("MCP-Protocol-Version header ('" . ($headerVersion ?? '(missing)') . "') does not match the _meta protocolVersion ('{$declared}')");
@@ -332,7 +366,7 @@ class EmbeddedHttpTransport
 		}
 
 		if (in_array($bodyMethod, ['tools/call', 'resources/read', 'prompts/get'], true)) {
-			[$ok, $nameValue] = McpServer::decodeSentinelHeaderValue($req->getHeader('mcp-name'));
+			[$ok, $nameValue] = RequestEra::decodeSentinelHeaderValue($req->getHeader('mcp-name'));
 			if (!$ok) {
 				return $fail('Mcp-Name header is missing or malformed');
 			}
@@ -402,18 +436,18 @@ class EmbeddedHttpTransport
 
 		// Modern-era header on a legacy-shaped request body: the header
 		// value MUST match the _meta field, so this is a HeaderMismatch.
-		if (in_array($version, $this->server->modernVersions(), true)) {
+		if (in_array($version, $this->modernVersions, true)) {
 			$res->setStatus(400);
 			$res->json([
 				'jsonrpc' => '2.0',
-				'error' => ['code' => McpServer::ERR_HEADER_MISMATCH, 'message' => 'Header mismatch: MCP-Protocol-Version declares ' . $version . ' but the request body carries no matching _meta protocolVersion'],
+				'error' => ['code' => RequestEra::ERR_HEADER_MISMATCH, 'message' => 'Header mismatch: MCP-Protocol-Version declares ' . $version . ' but the request body carries no matching _meta protocolVersion'],
 			]);
 			return false;
 		}
 
-		// Legacy-era acceptance list sourced from the server (with
+		// Legacy-era acceptance list supplied by the application (with
 		// 2024-11-05 grandfathered: transport-only tolerance kept).
-		$legacy = array_merge($this->server->legacyVersions(), ['2024-11-05']);
+		$legacy = array_merge($this->legacyVersions, ['2024-11-05']);
 		if (!in_array($version, $legacy, true)) {
 			$res->setStatus(400);
 			$res->json([

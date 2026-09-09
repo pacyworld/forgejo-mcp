@@ -34,6 +34,12 @@ class InstanceManager
 	/** @var \EnchiladaMCP\Logger|null Optional logger propagated to created Clients */
 	private ?\EnchiladaMCP\Logger $logger = null;
 
+	/** @var \Enchilada\Tortilla\EventLoop|null Event loop propagated to created Clients */
+	private ?\Enchilada\Tortilla\EventLoop $loop = null;
+
+	/** @var \Closure|null Progress emitter propagated to created Clients: function(): void */
+	private ?\Closure $progress = null;
+
 	/**
 	 * Create a new InstanceManager.
 	 *
@@ -97,6 +103,23 @@ class InstanceManager
 	}
 
 	/**
+	 * Wire the transport context created Clients' HTTP paths run on:
+	 * the event loop the stdio transport also runs on (so
+	 * Tortilla\HttpClient fiber-park waits are driven by that loop's
+	 * timers) and the server's progress emitter (so blocking-mode poll
+	 * loops keep notifications/progress flowing during long API waits).
+	 * Call before the first getClient(); cached clients are not rebuilt.
+	 *
+	 * @param \Enchilada\Tortilla\EventLoop|null $loop     Shared event loop, or null (blocking waits)
+	 * @param callable|null                      $progress function(): void progress emitter
+	 */
+	public function setHttpTransport(?\Enchilada\Tortilla\EventLoop $loop, ?callable $progress): void
+	{
+		$this->loop = $loop;
+		$this->progress = $progress !== null ? $progress(...) : null;
+	}
+
+	/**
 	 * Get a Client for the specified instance and user.
 	 *
 	 * @param  string $instance Instance name (required)
@@ -138,7 +161,9 @@ class InstanceManager
 				$users[$user]['token'],
 				$instanceConfig['verify_ssl'] ?? true,
 				$instanceConfig['timeout'] ?? 30,
-				$this->httpClient
+				$this->httpClient,
+				$this->loop,
+				$this->progress
 			);
 			$this->clients[$cacheKey]->setLogger($this->logger);
 			if ($this->logger !== null) {

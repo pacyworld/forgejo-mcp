@@ -25,6 +25,7 @@ class EnchiladaMultiHTTP {
 	// Extra stuff to pass to CURL
 	protected $ca_cert;
 	protected $plaintext_auth;
+	protected $verify_ssl = true;
 
 	/** @var resource */
 	protected $multiHandle;
@@ -39,6 +40,9 @@ class EnchiladaMultiHTTP {
 	 *                      CURLOPT_LOW_SPEED_LIMIT/TIME),
 	 *   'raw'|'result'|'error' => response slots,
 	 *   'writeCallback' => callable|null,
+	 *   'http_code'   => int,    HTTP status code (0 until the transfer completes)
+	 *   'curl_errno'  => int,    CURLE_* value (0 on success)
+	 *   'curl_error'  => string, curl error message ('' on success)
 	 * ]
 	 */
 	protected $requests = array();
@@ -79,6 +83,29 @@ class EnchiladaMultiHTTP {
 		if (is_resource($this->multiHandle)) {
 			curl_multi_close($this->multiHandle);
 		}
+	}
+
+	/**
+	 * Sets the time to wait for the HTTP request to complete.
+	 *
+	 * This is the per-client default; a per-request timeout passed to
+	 * queue() overrides it.
+	 *
+	 * @param int $timeout seconds to wait for
+	 */
+	public function setTimeout($timeout = self::DEFAULT_HTTP_REQUEST_TIMEOUT) {
+		if (is_int($timeout)) {
+			$this->request_timeout = $timeout;
+		}
+	}
+
+	/**
+	 * Enable or disable SSL certificate verification.
+	 *
+	 * @param bool $verify Whether to verify SSL certificates
+	 */
+	public function setVerifySsl(bool $verify) {
+		$this->verify_ssl = $verify;
 	}
 
 	/**
@@ -136,8 +163,8 @@ class EnchiladaMultiHTTP {
 			CURLOPT_URL => $url,
 			CURLOPT_TIMEOUT => $effectiveTimeout,
 			CURLOPT_RETURNTRANSFER => true,
-			CURLOPT_SSL_VERIFYPEER => true,
-			CURLOPT_SSL_VERIFYHOST => 2,
+			CURLOPT_SSL_VERIFYPEER => $this->verify_ssl,
+			CURLOPT_SSL_VERIFYHOST => $this->verify_ssl ? 2 : 0,
 			CURLOPT_FOLLOWLOCATION => true,
 			CURLOPT_CUSTOMREQUEST => $http_verb,
 			CURLOPT_USERAGENT => $this->useragent,
@@ -157,6 +184,9 @@ class EnchiladaMultiHTTP {
 				'error' => null,
 				'writeCallback' => $writeCallback,
 				'sseDone' => false,
+				'http_code' => 0,
+				'curl_errno' => 0,
+				'curl_error' => '',
 			);
 			$curlOptions[CURLOPT_RETURNTRANSFER] = false;
 			$curlOptions[CURLOPT_WRITEFUNCTION] =
@@ -247,6 +277,9 @@ class EnchiladaMultiHTTP {
 				'error' => null,
 				'writeCallback' => null,
 				'sseDone' => false,
+				'http_code' => 0,
+				'curl_errno' => 0,
+				'curl_error' => '',
 			);
 		}
 
@@ -293,11 +326,19 @@ class EnchiladaMultiHTTP {
 				$this->requests[$requestId]['raw'] = $raw;
 			}
 
+			// Capture status/diagnostics before the handle is closed, so
+			// getResult() can report them (issue #36).
+			$this->requests[$requestId]['http_code'] = (int) curl_getinfo($handle, CURLINFO_HTTP_CODE);
+			$this->requests[$requestId]['curl_errno'] = (int) $info['result'];
+			$this->requests[$requestId]['curl_error'] = (string) curl_error($handle);
+
 			// A short write-callback return (our [DONE] early-completion)
 			// surfaces as CURLE_WRITE_ERROR (23); that is success, not failure.
 			$curlResult = $info['result'];
 			if ($curlResult === CURLE_WRITE_ERROR && $req['sseDone']) {
 				$curlResult = CURLE_OK;
+				$this->requests[$requestId]['curl_errno'] = CURLE_OK;
+				$this->requests[$requestId]['curl_error'] = '';
 			}
 
 			if ($curlResult !== CURLE_OK) {
@@ -341,7 +382,9 @@ class EnchiladaMultiHTTP {
 	 * Get the result for a specific request ID (if completed).
 	 *
 	 * @param int $requestId
-	 * @return array|null [ 'result' => mixed, 'error' => string|null, 'raw' => string|null ] or null if not finished.
+	 * @return array|null [ 'result' => mixed, 'error' => string|null, 'raw' => string|null,
+	 *                      'http_code' => int, 'curl_errno' => int, 'curl_error' => string ]
+	 *                    or null if not finished.
 	 */
 	public function getResult($requestId) {
 		if (!isset($this->requests[$requestId])) {
@@ -357,6 +400,9 @@ class EnchiladaMultiHTTP {
 			'result' => $req['result'],
 			'error' => $req['error'],
 			'raw' => $req['raw'],
+			'http_code' => $req['http_code'],
+			'curl_errno' => $req['curl_errno'],
+			'curl_error' => $req['curl_error'],
 		);
 	}
 

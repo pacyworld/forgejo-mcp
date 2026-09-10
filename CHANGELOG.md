@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## [1.3.0] - 2026-09-10
 
 ### Upgrade Notes
 - **Vendored library layout changed.** The wire transports (`StdioTransport`, `HttpSseTransport`, `EmbeddedHttpTransport`) moved out of `libraries/EnchiladaMCP/` into the new standalone `Enchilada/Tortilla` repository, vendored as `libraries/Enchilada/Tortilla/`; the HTTP clients moved from `libraries/EnchiladaHTTP/` to eponymous directories (`libraries/EnchiladaHTTP/` + `libraries/EnchiladaMultiHTTP/`), the layout the framework autoloader resolves natively for legacy global classes. `Liveness`/`LivenessSink` are gone: their fiber-park machinery is absorbed by `Enchilada\Tortilla\HttpClient`, and their notification push is a plain `setNotifier()` callable.

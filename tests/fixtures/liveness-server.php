@@ -21,12 +21,6 @@
 
 require_once dirname(__DIR__, 2) . '/system/bootstrap.inc.php';
 
-// Same autoloader gap as classes/Forgejo/Client.class.php: the
-// EnchiladaMultiHTTP class name matches no vendored file/dir name.
-if (!class_exists('EnchiladaMultiHTTP', false)) {
-	require_once dirname(__DIR__, 2) . '/libraries/HTTP/EnchiladaMultiHTTP.class.php';
-}
-
 use EnchiladaMCP\McpServer;
 use EnchiladaMCP\McpTool;
 use Enchilada\Tortilla\ComalEventLoop;

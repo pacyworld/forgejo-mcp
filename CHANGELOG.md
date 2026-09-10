@@ -3,7 +3,7 @@
 ## Unreleased
 
 ### Upgrade Notes
-- **Vendored library layout changed.** The wire transports (`StdioTransport`, `HttpSseTransport`, `EmbeddedHttpTransport`) moved out of `libraries/EnchiladaMCP/` into the new standalone `Enchilada/Tortilla` repository, vendored as `libraries/Enchilada/Tortilla/`; the HTTP clients moved from `libraries/EnchiladaHTTP/` to `libraries/HTTP/` (matching the Enchilada/Extras layout). `Liveness`/`LivenessSink` are gone: their fiber-park machinery is absorbed by `Enchilada\Tortilla\HttpClient`, and their notification push is a plain `setNotifier()` callable.
+- **Vendored library layout changed.** The wire transports (`StdioTransport`, `HttpSseTransport`, `EmbeddedHttpTransport`) moved out of `libraries/EnchiladaMCP/` into the new standalone `Enchilada/Tortilla` repository, vendored as `libraries/Enchilada/Tortilla/`; the HTTP clients moved from `libraries/EnchiladaHTTP/` to eponymous directories (`libraries/EnchiladaHTTP/` + `libraries/EnchiladaMultiHTTP/`), the layout the framework autoloader resolves natively for legacy global classes. `Liveness`/`LivenessSink` are gone: their fiber-park machinery is absorbed by `Enchilada\Tortilla\HttpClient`, and their notification push is a plain `setNotifier()` callable.
 - **New vendored dependency: `Enchilada\Comal`** (the event reactor) in `libraries/Enchilada/Comal/`. The stdio transport uses it on POSIX via Tortilla's `ComalEventLoop` adapter. Installing `php84-pecl-ev` is recommended — Comal then multiplexes with libev/kqueue instead of `stream_select()`.
 - **New: `--io-mode=` / `FORGEJO_MCP_IO_MODE`** (`auto`|`reactor`|`blocking`, default `auto`). `auto` selects the reactor on POSIX and blocking reads on Windows; override only when diagnosing transport behaviour.
 

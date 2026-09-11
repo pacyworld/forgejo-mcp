@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- `sync_push_mirror` failed with HTTP 405: it posted to `repos/{owner}/{repo}/push_mirrors/sync`, which is not a Forgejo route. It now posts to the documented `repos/{owner}/{repo}/push_mirrors-sync` endpoint.
+
 ## [1.3.0] - 2026-09-10
 
 ### Upgrade Notes

@@ -20,21 +20,21 @@ class TagTools
 		$this->manager = $manager;
 	}
 
-	#[McpTool(name: 'list_tags', description: 'List tags of a repository.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'instance', 'user']])]
+	#[McpTool(name: 'list_tags', description: 'List a repository\'s tags.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'instance', 'user']])]
 	public function list_tags(string $owner, string $repo, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/tags", ['page' => $page, 'limit' => $limit]);
 	}
 
-	#[McpTool(name: 'get_tag', description: 'Get a specific tag by name.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'tag' => ['type' => 'string', 'description' => 'Tag name'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'tag', 'instance', 'user']])]
+	#[McpTool(name: 'get_tag', description: 'Get a tag by name.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'tag' => ['type' => 'string'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'tag', 'instance', 'user']])]
 	public function get_tag(string $owner, string $repo, string $tag, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/tags/{$tag}");
 	}
 
-	#[McpTool(name: 'create_tag', description: 'Create a tag in a repository.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'tag_name' => ['type' => 'string', 'description' => 'Tag name'], 'target' => ['type' => 'string', 'description' => 'Branch or SHA to tag (optional, defaults to default branch)'], 'message' => ['type' => 'string', 'description' => 'Tag message for annotated tag (optional)'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'tag_name', 'instance', 'user']])]
+	#[McpTool(name: 'create_tag', description: 'Create a tag.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'tag_name' => ['type' => 'string'], 'target' => ['type' => 'string', 'description' => 'Branch or SHA; default branch if omitted'], 'message' => ['type' => 'string', 'description' => 'Makes an annotated tag'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'tag_name', 'instance', 'user']])]
 	public function create_tag(string $owner, string $repo, string $tag_name, ?string $target = null, ?string $message = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -44,7 +44,7 @@ class TagTools
 		return $client->post("repos/{$owner}/{$repo}/tags", $data);
 	}
 
-	#[McpTool(name: 'delete_tag', description: 'Delete a tag from a repository.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'tag' => ['type' => 'string', 'description' => 'Tag name to delete'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'tag', 'instance', 'user']])]
+	#[McpTool(name: 'delete_tag', description: 'Delete a tag.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'tag' => ['type' => 'string'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'tag', 'instance', 'user']])]
 	public function delete_tag(string $owner, string $repo, string $tag, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);

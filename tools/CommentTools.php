@@ -22,18 +22,18 @@ class CommentTools
 
 	#[McpTool(
 		name: 'list_issue_comments',
-		description: 'List comments on an issue.',
+		description: 'List comments on an issue or PR.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'index' => ['type' => 'integer', 'description' => 'Issue index number'],
-				'page' => ['type' => 'integer', 'description' => 'Page number'],
-				'limit' => ['type' => 'integer', 'description' => 'Results per page'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'index' => ['type' => 'integer'],
+				'page' => ['type' => 'integer'],
+				'limit' => ['type' => 'integer', 'description' => 'default 20'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
@@ -46,16 +46,16 @@ class CommentTools
 
 	#[McpTool(
 		name: 'get_issue_comment',
-		description: 'Get a specific comment by ID.',
+		description: 'Get a comment by ID.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'id' => ['type' => 'integer', 'description' => 'Comment ID'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'id' => ['type' => 'integer'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'id', 'instance', 'user'],
 		]
@@ -68,16 +68,16 @@ class CommentTools
 
 	#[McpTool(
 		name: 'create_issue_comment',
-		description: 'Add a comment to an issue.',
+		description: 'Comment on an issue or PR.',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'index' => ['type' => 'integer', 'description' => 'Issue index number'],
-				'body' => ['type' => 'string', 'description' => 'Comment body (Markdown)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'index' => ['type' => 'integer'],
+				'body' => ['type' => 'string', 'description' => 'Markdown'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'index', 'body', 'instance', 'user'],
 		]
@@ -90,16 +90,16 @@ class CommentTools
 
 	#[McpTool(
 		name: 'edit_issue_comment',
-		description: 'Edit an existing comment.',
+		description: 'Replace a comment\'s body.',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'id' => ['type' => 'integer', 'description' => 'Comment ID'],
-				'body' => ['type' => 'string', 'description' => 'New comment body'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'id' => ['type' => 'integer'],
+				'body' => ['type' => 'string', 'description' => 'Markdown'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'id', 'body', 'instance', 'user'],
 		]
@@ -116,11 +116,11 @@ class CommentTools
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'id' => ['type' => 'integer', 'description' => 'Comment ID'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'id' => ['type' => 'integer'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'id', 'instance', 'user'],
 		]

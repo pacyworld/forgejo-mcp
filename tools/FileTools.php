@@ -22,17 +22,17 @@ class FileTools
 
 	#[McpTool(
 		name: 'get_file_content',
-		description: 'Get the content of a file from a repository. Returns decoded content and metadata.',
+		description: 'Get a repository file: metadata (incl. sha) plus decoded_content.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'filepath' => ['type' => 'string', 'description' => 'Path to the file'],
-				'ref' => ['type' => 'string', 'description' => 'Branch, tag, or commit SHA (optional, defaults to default branch)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'filepath' => ['type' => 'string'],
+				'ref' => ['type' => 'string', 'description' => 'Branch, tag or SHA; default branch if omitted'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'filepath', 'instance', 'user'],
 		]
@@ -54,19 +54,19 @@ class FileTools
 
 	#[McpTool(
 		name: 'create_file',
-		description: 'Create a new file in a repository.',
+		description: 'Create a file and commit it.',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'filepath' => ['type' => 'string', 'description' => 'Path for the new file'],
-				'content' => ['type' => 'string', 'description' => 'File content (plain text, will be base64-encoded)'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'filepath' => ['type' => 'string'],
+				'content' => ['type' => 'string', 'description' => 'Plain text (encoded by the server)'],
 				'message' => ['type' => 'string', 'description' => 'Commit message'],
-				'branch' => ['type' => 'string', 'description' => 'Branch to commit to (optional)'],
-				'new_branch' => ['type' => 'string', 'description' => 'Create a new branch with this name (optional)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'branch' => ['type' => 'string', 'description' => 'Branch to commit to'],
+				'new_branch' => ['type' => 'string', 'description' => 'Commit to a new branch with this name'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'filepath', 'content', 'message', 'instance', 'user'],
 		]
@@ -85,20 +85,20 @@ class FileTools
 
 	#[McpTool(
 		name: 'update_file',
-		description: 'Update an existing file in a repository. Requires the current file SHA.',
+		description: 'Replace a file\'s content and commit it.',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'filepath' => ['type' => 'string', 'description' => 'Path to the file'],
-				'content' => ['type' => 'string', 'description' => 'New file content (plain text)'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'filepath' => ['type' => 'string'],
+				'content' => ['type' => 'string', 'description' => 'Plain text (encoded by the server)'],
 				'message' => ['type' => 'string', 'description' => 'Commit message'],
-				'sha' => ['type' => 'string', 'description' => 'SHA of the file being replaced (from get_file_content)'],
-				'branch' => ['type' => 'string', 'description' => 'Branch to commit to (optional)'],
-				'new_branch' => ['type' => 'string', 'description' => 'Create a new branch (optional)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'sha' => ['type' => 'string', 'description' => 'Current file SHA (from get_file_content)'],
+				'branch' => ['type' => 'string', 'description' => 'Branch to commit to'],
+				'new_branch' => ['type' => 'string', 'description' => 'Commit to a new branch with this name'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'filepath', 'content', 'message', 'sha', 'instance', 'user'],
 		]
@@ -118,18 +118,18 @@ class FileTools
 
 	#[McpTool(
 		name: 'delete_file',
-		description: 'Delete a file from a repository. Requires the current file SHA.',
+		description: 'Delete a file and commit it.',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'filepath' => ['type' => 'string', 'description' => 'Path to the file'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'filepath' => ['type' => 'string'],
 				'message' => ['type' => 'string', 'description' => 'Commit message'],
-				'sha' => ['type' => 'string', 'description' => 'SHA of the file to delete'],
-				'branch' => ['type' => 'string', 'description' => 'Branch (optional)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'sha' => ['type' => 'string', 'description' => 'Current file SHA (from get_file_content)'],
+				'branch' => ['type' => 'string'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'filepath', 'message', 'sha', 'instance', 'user'],
 		]

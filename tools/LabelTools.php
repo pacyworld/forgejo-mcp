@@ -22,17 +22,17 @@ class LabelTools
 
 	#[McpTool(
 		name: 'list_repo_labels',
-		description: 'List labels for a repository.',
+		description: 'List a repository\'s labels.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'page' => ['type' => 'integer', 'description' => 'Page number'],
-				'limit' => ['type' => 'integer', 'description' => 'Results per page'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'page' => ['type' => 'integer'],
+				'limit' => ['type' => 'integer', 'description' => 'default 20'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'instance', 'user'],
 		]
@@ -45,16 +45,16 @@ class LabelTools
 
 	#[McpTool(
 		name: 'list_org_labels',
-		description: 'List labels for an organization.',
+		description: 'List an organization\'s labels.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'org' => ['type' => 'string', 'description' => 'Organization name'],
-				'page' => ['type' => 'integer', 'description' => 'Page number'],
-				'limit' => ['type' => 'integer', 'description' => 'Results per page'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'org' => ['type' => 'string'],
+				'page' => ['type' => 'integer'],
+				'limit' => ['type' => 'integer', 'description' => 'default 20'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['org', 'instance', 'user'],
 		]
@@ -67,16 +67,16 @@ class LabelTools
 
 	#[McpTool(
 		name: 'add_issue_labels',
-		description: 'Add labels to an issue.',
+		description: 'Add labels to an issue or PR.',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'index' => ['type' => 'integer', 'description' => 'Issue index number'],
-				'labels' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Label IDs to add'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'index' => ['type' => 'integer'],
+				'labels' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Label IDs'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'index', 'labels', 'instance', 'user'],
 		]
@@ -89,16 +89,16 @@ class LabelTools
 
 	#[McpTool(
 		name: 'remove_issue_labels',
-		description: 'Remove a label from an issue.',
+		description: 'Remove one label from an issue or PR.',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'index' => ['type' => 'integer', 'description' => 'Issue index number'],
-				'label_id' => ['type' => 'integer', 'description' => 'Label ID to remove'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'index' => ['type' => 'integer'],
+				'label_id' => ['type' => 'integer'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'index', 'label_id', 'instance', 'user'],
 		]

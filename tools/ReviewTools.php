@@ -27,13 +27,13 @@ class ReviewTools
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'index' => ['type' => 'integer', 'description' => 'PR index number'],
-				'page' => ['type' => 'integer', 'description' => 'Page number'],
-				'limit' => ['type' => 'integer', 'description' => 'Results per page'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'index' => ['type' => 'integer'],
+				'page' => ['type' => 'integer'],
+				'limit' => ['type' => 'integer', 'description' => 'default 20'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
@@ -46,17 +46,17 @@ class ReviewTools
 
 	#[McpTool(
 		name: 'get_pull_review',
-		description: 'Get a specific review by ID.',
+		description: 'Get a pull request review.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'index' => ['type' => 'integer', 'description' => 'PR index number'],
-				'review_id' => ['type' => 'integer', 'description' => 'Review ID'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'index' => ['type' => 'integer'],
+				'review_id' => ['type' => 'integer'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'index', 'review_id', 'instance', 'user'],
 		]
@@ -69,17 +69,17 @@ class ReviewTools
 
 	#[McpTool(
 		name: 'list_pull_review_comments',
-		description: 'List comments within a pull request review.',
+		description: 'List a review\'s inline comments.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'index' => ['type' => 'integer', 'description' => 'PR index number'],
-				'review_id' => ['type' => 'integer', 'description' => 'Review ID'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'index' => ['type' => 'integer'],
+				'review_id' => ['type' => 'integer'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'index', 'review_id', 'instance', 'user'],
 		]
@@ -96,14 +96,14 @@ class ReviewTools
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'index' => ['type' => 'integer', 'description' => 'PR index number'],
-				'event' => ['type' => 'string', 'description' => 'Review action: APPROVED, REQUEST_CHANGES, COMMENT'],
-				'body' => ['type' => 'string', 'description' => 'Review body text'],
-				'comments' => ['type' => 'array', 'description' => 'Inline comments array [{path, body, new_position}]'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'index' => ['type' => 'integer'],
+				'event' => ['type' => 'string', 'description' => 'APPROVED|REQUEST_CHANGES|COMMENT'],
+				'body' => ['type' => 'string'],
+				'comments' => ['type' => 'array', 'description' => 'Inline comments: [{path, body, new_position}]'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'index', 'event', 'instance', 'user'],
 		]
@@ -117,7 +117,7 @@ class ReviewTools
 		return $client->post("repos/{$owner}/{$repo}/pulls/{$index}/reviews", $data);
 	}
 
-	#[McpTool(name: 'submit_pull_review', description: 'Submit a pending pull request review.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer'], 'review_id' => ['type' => 'integer'], 'event' => ['type' => 'string', 'description' => 'APPROVED, REQUEST_CHANGES, or COMMENT'], 'body' => ['type' => 'string'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'index', 'review_id', 'event', 'instance', 'user']])]
+	#[McpTool(name: 'submit_pull_review', description: 'Submit a pending pull request review.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer'], 'review_id' => ['type' => 'integer'], 'event' => ['type' => 'string', 'description' => 'APPROVED|REQUEST_CHANGES|COMMENT'], 'body' => ['type' => 'string'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'index', 'review_id', 'event', 'instance', 'user']])]
 	public function submit_pull_review(string $owner, string $repo, int $index, int $review_id, string $event, string $body = '', string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -126,21 +126,21 @@ class ReviewTools
 		return $client->post("repos/{$owner}/{$repo}/pulls/{$index}/reviews/{$review_id}", $data);
 	}
 
-	#[McpTool(name: 'delete_pull_review', description: 'Delete a pending pull request review.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer'], 'review_id' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'index', 'review_id', 'instance', 'user']])]
+	#[McpTool(name: 'delete_pull_review', description: 'Delete a pending pull request review.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer'], 'review_id' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'index', 'review_id', 'instance', 'user']])]
 	public function delete_pull_review(string $owner, string $repo, int $index, int $review_id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->delete("repos/{$owner}/{$repo}/pulls/{$index}/reviews/{$review_id}");
 	}
 
-	#[McpTool(name: 'dismiss_pull_review', description: 'Dismiss a pull request review.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer'], 'review_id' => ['type' => 'integer'], 'message' => ['type' => 'string', 'description' => 'Reason for dismissal'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'index', 'review_id', 'message', 'instance', 'user']])]
+	#[McpTool(name: 'dismiss_pull_review', description: 'Dismiss a pull request review.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer'], 'review_id' => ['type' => 'integer'], 'message' => ['type' => 'string', 'description' => 'Reason'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'index', 'review_id', 'message', 'instance', 'user']])]
 	public function dismiss_pull_review(string $owner, string $repo, int $index, int $review_id, string $message, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->post("repos/{$owner}/{$repo}/pulls/{$index}/reviews/{$review_id}/dismissals", ['message' => $message]);
 	}
 
-	#[McpTool(name: 'create_review_requests', description: 'Request reviews from specific users or teams.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer'], 'reviewers' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Usernames to request review from'], 'team_reviewers' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Team names to request review from'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'index', 'instance', 'user']])]
+	#[McpTool(name: 'create_review_requests', description: 'Request PR reviews from users and/or teams.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer'], 'reviewers' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Usernames'], 'team_reviewers' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Team names'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'index', 'instance', 'user']])]
 	public function create_review_requests(string $owner, string $repo, int $index, ?array $reviewers = null, ?array $team_reviewers = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -150,7 +150,7 @@ class ReviewTools
 		return $client->post("repos/{$owner}/{$repo}/pulls/{$index}/requested_reviewers", $data);
 	}
 
-	#[McpTool(name: 'delete_review_requests', description: 'Cancel pending review requests.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer'], 'reviewers' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Usernames to cancel'], 'team_reviewers' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Team names to cancel'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'index', 'instance', 'user']])]
+	#[McpTool(name: 'delete_review_requests', description: 'Cancel pending PR review requests.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'index' => ['type' => 'integer'], 'reviewers' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Usernames'], 'team_reviewers' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Team names'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'index', 'instance', 'user']])]
 	public function delete_review_requests(string $owner, string $repo, int $index, ?array $reviewers = null, ?array $team_reviewers = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- Tool definitions are more compact: filler parameter descriptions (`owner`, `repo`, `instance`, `user`, `page`, ...) are dropped and tool descriptions tightened, cutting the `tools/list` payload from 20,844 to 16,756 tokens (Qwen tokenizer). Tool names, parameters, types and required lists are unchanged; the server instructions now explain the shared `instance`/`user`/`owner`/`repo`/`index` parameters once.
+
 ## [1.3.1] - 2026-09-11
 
 ### Fixed

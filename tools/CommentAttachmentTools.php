@@ -20,21 +20,21 @@ class CommentAttachmentTools
 		$this->manager = $manager;
 	}
 
-	#[McpTool(name: 'list_comment_attachments', description: 'List attachments on an issue/PR comment.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer', 'description' => 'Comment ID'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'comment_id', 'instance', 'user']])]
+	#[McpTool(name: 'list_comment_attachments', description: 'List attachments on an issue/PR comment.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'comment_id', 'instance', 'user']])]
 	public function list_comment_attachments(string $owner, string $repo, int $comment_id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/issues/comments/{$comment_id}/assets");
 	}
 
-	#[McpTool(name: 'get_comment_attachment', description: 'Get metadata for a single comment attachment.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'comment_id', 'attachment_id', 'instance', 'user']])]
+	#[McpTool(name: 'get_comment_attachment', description: 'Get comment attachment metadata.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'comment_id', 'attachment_id', 'instance', 'user']])]
 	public function get_comment_attachment(string $owner, string $repo, int $comment_id, int $attachment_id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/issues/comments/{$comment_id}/assets/{$attachment_id}");
 	}
 
-	#[McpTool(name: 'download_comment_attachment', description: 'Download a comment attachment. Returns metadata with browser_download_url.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'comment_id', 'attachment_id', 'instance', 'user']])]
+	#[McpTool(name: 'download_comment_attachment', description: 'Get a comment attachment\'s metadata including browser_download_url.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'comment_id', 'attachment_id', 'instance', 'user']])]
 	public function download_comment_attachment(string $owner, string $repo, int $comment_id, int $attachment_id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -43,7 +43,7 @@ class CommentAttachmentTools
 		return $meta;
 	}
 
-	#[McpTool(name: 'create_comment_attachment', description: 'Upload a new attachment to an issue/PR comment. Provide base64-encoded file content.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer'], 'filename' => ['type' => 'string', 'description' => 'Filename'], 'content' => ['type' => 'string', 'description' => 'Base64-encoded file content'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'comment_id', 'filename', 'content', 'instance', 'user']])]
+	#[McpTool(name: 'create_comment_attachment', description: 'Upload an attachment to an issue/PR comment.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer'], 'filename' => ['type' => 'string'], 'content' => ['type' => 'string', 'description' => 'Base64'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'comment_id', 'filename', 'content', 'instance', 'user']])]
 	public function create_comment_attachment(string $owner, string $repo, int $comment_id, string $filename, string $content, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -54,14 +54,14 @@ class CommentAttachmentTools
 		return $client->uploadFile("repos/{$owner}/{$repo}/issues/comments/{$comment_id}/assets", 'attachment', $filename, $decoded);
 	}
 
-	#[McpTool(name: 'edit_comment_attachment', description: 'Rename a comment attachment.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'name' => ['type' => 'string', 'description' => 'New filename'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'comment_id', 'attachment_id', 'name', 'instance', 'user']])]
+	#[McpTool(name: 'edit_comment_attachment', description: 'Rename a comment attachment.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'name' => ['type' => 'string', 'description' => 'New filename'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'comment_id', 'attachment_id', 'name', 'instance', 'user']])]
 	public function edit_comment_attachment(string $owner, string $repo, int $comment_id, int $attachment_id, string $name, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->patch("repos/{$owner}/{$repo}/issues/comments/{$comment_id}/assets/{$attachment_id}", ['name' => $name]);
 	}
 
-	#[McpTool(name: 'delete_comment_attachment', description: 'Delete a comment attachment.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'comment_id', 'attachment_id', 'instance', 'user']])]
+	#[McpTool(name: 'delete_comment_attachment', description: 'Delete a comment attachment.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'comment_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'comment_id', 'attachment_id', 'instance', 'user']])]
 	public function delete_comment_attachment(string $owner, string $repo, int $comment_id, int $attachment_id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);

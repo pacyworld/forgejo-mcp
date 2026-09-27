@@ -22,16 +22,16 @@ class NotificationTools
 
 	#[McpTool(
 		name: 'check_notifications',
-		description: 'List notifications for the authenticated user.',
+		description: 'List the user\'s notifications.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'status_types' => ['type' => 'string', 'description' => 'Filter: unread, read, pinned (comma-separated)'],
-				'page' => ['type' => 'integer', 'description' => 'Page number'],
-				'limit' => ['type' => 'integer', 'description' => 'Results per page'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'status_types' => ['type' => 'string', 'description' => 'Comma-separated: unread,read,pinned'],
+				'page' => ['type' => 'integer'],
+				'limit' => ['type' => 'integer', 'description' => 'default 20'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['instance', 'user'],
 		]
@@ -46,14 +46,14 @@ class NotificationTools
 
 	#[McpTool(
 		name: 'get_notification_thread',
-		description: 'Get a specific notification thread.',
+		description: 'Get a notification thread.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'id' => ['type' => 'integer', 'description' => 'Notification thread ID'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'id' => ['type' => 'integer'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['id', 'instance', 'user'],
 		]
@@ -66,13 +66,13 @@ class NotificationTools
 
 	#[McpTool(
 		name: 'mark_notification_read',
-		description: 'Mark a notification thread as read.',
+		description: 'Mark a notification thread read.',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'id' => ['type' => 'integer', 'description' => 'Notification thread ID'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'id' => ['type' => 'integer'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['id', 'instance', 'user'],
 		]
@@ -85,12 +85,12 @@ class NotificationTools
 
 	#[McpTool(
 		name: 'mark_all_notifications_read',
-		description: 'Mark all notifications as read.',
+		description: 'Mark all notifications read.',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['instance', 'user'],
 		]
@@ -103,18 +103,18 @@ class NotificationTools
 
 	#[McpTool(
 		name: 'list_repo_notifications',
-		description: 'List notifications for a specific repository.',
+		description: 'List the user\'s notifications for one repository.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'status_types' => ['type' => 'string', 'description' => 'Filter: unread, read, pinned'],
-				'page' => ['type' => 'integer', 'description' => 'Page number'],
-				'limit' => ['type' => 'integer', 'description' => 'Results per page'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'status_types' => ['type' => 'string', 'description' => 'Comma-separated: unread,read,pinned'],
+				'page' => ['type' => 'integer'],
+				'limit' => ['type' => 'integer', 'description' => 'default 20'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'instance', 'user'],
 		]
@@ -129,14 +129,14 @@ class NotificationTools
 
 	#[McpTool(
 		name: 'mark_repo_notifications_read',
-		description: 'Mark all notifications in a repository as read.',
+		description: 'Mark all of a repository\'s notifications read.',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'instance', 'user'],
 		]

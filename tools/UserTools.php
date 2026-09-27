@@ -25,13 +25,13 @@ class UserTools
 	 */
 	#[McpTool(
 		name: 'get_my_user_info',
-		description: 'Get profile information of the currently authenticated user.',
+		description: 'Get the authenticated user\'s profile.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['instance', 'user'],
 		]
@@ -47,16 +47,16 @@ class UserTools
 	 */
 	#[McpTool(
 		name: 'search_users',
-		description: 'Search for users by username or email.',
+		description: 'Search users by username or email.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'q' => ['type' => 'string', 'description' => 'Search query (username or email)'],
-				'limit' => ['type' => 'integer', 'description' => 'Maximum results to return (default 10)'],
-				'page' => ['type' => 'integer', 'description' => 'Page number (default 1)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'q' => ['type' => 'string'],
+				'limit' => ['type' => 'integer', 'description' => 'default 10'],
+				'page' => ['type' => 'integer'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['q', 'instance', 'user'],
 		]

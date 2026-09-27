@@ -20,7 +20,7 @@ class WorkflowTools
 		$this->manager = $manager;
 	}
 
-	#[McpTool(name: 'dispatch_workflow', description: 'Trigger a workflow dispatch event.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'workflow_id' => ['type' => 'string', 'description' => 'Workflow filename (e.g., ci.yml)'], 'ref' => ['type' => 'string', 'description' => 'Branch or tag to run on'], 'inputs' => ['type' => 'object', 'description' => 'Workflow input parameters'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'workflow_id', 'ref', 'instance', 'user']])]
+	#[McpTool(name: 'dispatch_workflow', description: 'Trigger a workflow_dispatch run.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'workflow_id' => ['type' => 'string', 'description' => 'Workflow filename, e.g. ci.yml'], 'ref' => ['type' => 'string', 'description' => 'Branch or tag to run on'], 'inputs' => ['type' => 'object', 'description' => 'Workflow inputs'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'workflow_id', 'ref', 'instance', 'user']])]
 	public function dispatch_workflow(string $owner, string $repo, string $workflow_id, string $ref, ?array $inputs = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -29,7 +29,7 @@ class WorkflowTools
 		return $client->post("repos/{$owner}/{$repo}/actions/workflows/{$workflow_id}/dispatches", $data);
 	}
 
-	#[McpTool(name: 'list_workflow_runs', description: 'List workflow runs for a repository.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'page' => ['type' => 'integer', 'description' => 'Page number'], 'limit' => ['type' => 'integer', 'description' => 'Results per page'], 'status' => ['type' => 'string', 'description' => 'Filter by status: success, failure, waiting, running'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'instance', 'user']])]
+	#[McpTool(name: 'list_workflow_runs', description: 'List a repository\'s workflow runs.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer', 'description' => 'default 20'], 'status' => ['type' => 'string', 'description' => 'success|failure|waiting|running'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'instance', 'user']])]
 	public function list_workflow_runs(string $owner, string $repo, int $page = 1, int $limit = 20, ?string $status = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -42,21 +42,21 @@ class WorkflowTools
 		return $result;
 	}
 
-	#[McpTool(name: 'get_workflow_run', description: 'Get details of a specific workflow run.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'run_id' => ['type' => 'integer', 'description' => 'Workflow run ID'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'run_id', 'instance', 'user']])]
+	#[McpTool(name: 'get_workflow_run', description: 'Get a workflow run.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'run_id' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'run_id', 'instance', 'user']])]
 	public function get_workflow_run(string $owner, string $repo, int $run_id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/actions/runs/{$run_id}");
 	}
 
-	#[McpTool(name: 'list_workflow_run_jobs', description: 'List jobs of a workflow run (id, name, status, attempt). Use a job id with get_action_job_logs, or a job index with get_workflow_job_logs.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'run_id' => ['type' => 'integer', 'description' => 'Workflow run ID (from list_workflow_runs)'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'run_id', 'instance', 'user']])]
+	#[McpTool(name: 'list_workflow_run_jobs', description: 'List a run\'s jobs (id, name, status, attempt). Pass a job id to get_action_job_logs or a job index to get_workflow_job_logs.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'run_id' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'run_id', 'instance', 'user']])]
 	public function list_workflow_run_jobs(string $owner, string $repo, int $run_id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/actions/runs/{$run_id}/jobs");
 	}
 
-	#[McpTool(name: 'get_workflow_job_logs', description: 'Download logs for a workflow run job identified by run ID and job index. On Forgejo 16+ servers the official REST API is used (API tokens work for public and private repos); on older servers it falls back to the legacy web route which only works for public repositories. Specify job_index (0-based, default 0) and attempt (default 1).', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'run_id' => ['type' => 'integer', 'description' => 'Workflow run ID (from list_workflow_runs)'], 'job_index' => ['type' => 'integer', 'description' => 'Job index within the run (0-based, default 0)'], 'attempt' => ['type' => 'integer', 'description' => 'Attempt number (default 1)'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'run_id', 'instance', 'user']])]
+	#[McpTool(name: 'get_workflow_job_logs', description: 'Get logs of a job by run ID and job index. Before Forgejo 16 this only works for public repositories.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'run_id' => ['type' => 'integer'], 'job_index' => ['type' => 'integer', 'description' => '0-based (default 0)'], 'attempt' => ['type' => 'integer', 'description' => 'default 1'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'run_id', 'instance', 'user']])]
 	public function get_workflow_job_logs(string $owner, string $repo, int $run_id, int $job_index = 0, int $attempt = 1, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -84,7 +84,7 @@ class WorkflowTools
 		return ['logs' => $logs];
 	}
 
-	#[McpTool(name: 'get_action_job_logs', description: 'Download the plaintext logs of a single workflow job by job ID (Forgejo 16+ only). Works for public and private repositories via API token. Omit attempt to fetch the latest attempt; attempt is 1-based and matches the attempt field from list_workflow_run_jobs. Returns a structured error when the connected server is older than Forgejo 16.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'job_id' => ['type' => 'integer', 'description' => 'Workflow job ID (from list_workflow_run_jobs)'], 'attempt' => ['type' => 'integer', 'description' => 'Attempt number (1-based, omit for latest)'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'job_id', 'instance', 'user']])]
+	#[McpTool(name: 'get_action_job_logs', description: 'Get plaintext logs of one job by job ID. Forgejo 16+ only.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'job_id' => ['type' => 'integer', 'description' => 'From list_workflow_run_jobs'], 'attempt' => ['type' => 'integer', 'description' => '1-based; latest if omitted'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'job_id', 'instance', 'user']])]
 	public function get_action_job_logs(string $owner, string $repo, int $job_id, ?int $attempt = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -117,7 +117,7 @@ class WorkflowTools
 		];
 	}
 
-	#[McpTool(name: 'download_action_run_logs', description: 'Download logs for every job in a workflow run (Forgejo 16+ only). The server streams a ZIP with one {job-name}-{job-id}-attempt-{N}.log entry per job; entries flagged missing are jobs that have not started or whose logs expired. Log text is extracted inline when the PHP zip extension is available on this MCP host, otherwise the archive is returned base64-encoded. Returns a structured error when the connected server is older than Forgejo 16.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'run_id' => ['type' => 'integer', 'description' => 'Workflow run ID (from list_workflow_runs)'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'run_id', 'instance', 'user']])]
+	#[McpTool(name: 'download_action_run_logs', description: 'Get logs of every job in a run, one file per job (format "files"), or the raw ZIP base64-encoded (format "zip-base64") if it cannot be extracted. Missing entries: job not started or logs expired. Forgejo 16+ only.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'run_id' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'run_id', 'instance', 'user']])]
 	public function download_action_run_logs(string $owner, string $repo, int $run_id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -280,42 +280,42 @@ class WorkflowTools
 		return $files;
 	}
 
-	#[McpTool(name: 'list_repo_action_secrets', description: 'List action secrets for a repository (names only, values are never exposed).', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'instance', 'user']])]
+	#[McpTool(name: 'list_repo_action_secrets', description: 'List a repository\'s action secret names (values are never exposed).', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'instance', 'user']])]
 	public function list_repo_action_secrets(string $owner, string $repo, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/actions/secrets", ['page' => $page, 'limit' => $limit]);
 	}
 
-	#[McpTool(name: 'create_or_update_repo_action_secret', description: 'Create or update an action secret for a repository.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'secret_name' => ['type' => 'string', 'description' => 'Secret name (e.g., FORGE_TOKEN)'], 'data' => ['type' => 'string', 'description' => 'Secret value'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'secret_name', 'data', 'instance', 'user']])]
+	#[McpTool(name: 'create_or_update_repo_action_secret', description: 'Create or update a repository action secret.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'secret_name' => ['type' => 'string', 'description' => 'e.g. FORGE_TOKEN'], 'data' => ['type' => 'string', 'description' => 'Secret value'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'secret_name', 'data', 'instance', 'user']])]
 	public function create_or_update_repo_action_secret(string $owner, string $repo, string $secret_name, string $data, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->put("repos/{$owner}/{$repo}/actions/secrets/{$secret_name}", ['data' => $data]);
 	}
 
-	#[McpTool(name: 'delete_repo_action_secret', description: 'Delete an action secret from a repository.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'secret_name' => ['type' => 'string', 'description' => 'Secret name to delete'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'secret_name', 'instance', 'user']])]
+	#[McpTool(name: 'delete_repo_action_secret', description: 'Delete a repository action secret.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'secret_name' => ['type' => 'string'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'secret_name', 'instance', 'user']])]
 	public function delete_repo_action_secret(string $owner, string $repo, string $secret_name, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->delete("repos/{$owner}/{$repo}/actions/secrets/{$secret_name}");
 	}
 
-	#[McpTool(name: 'list_org_action_secrets', description: 'List action secrets for an organization.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string', 'description' => 'Organization name'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['org', 'instance', 'user']])]
+	#[McpTool(name: 'list_org_action_secrets', description: 'List an organization\'s action secret names.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['org', 'instance', 'user']])]
 	public function list_org_action_secrets(string $org, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("orgs/{$org}/actions/secrets", ['page' => $page, 'limit' => $limit]);
 	}
 
-	#[McpTool(name: 'create_or_update_org_action_secret', description: 'Create or update an action secret for an organization.', inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string', 'description' => 'Organization name'], 'secret_name' => ['type' => 'string', 'description' => 'Secret name'], 'data' => ['type' => 'string', 'description' => 'Secret value'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['org', 'secret_name', 'data', 'instance', 'user']])]
+	#[McpTool(name: 'create_or_update_org_action_secret', description: 'Create or update an organization action secret.', inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string'], 'secret_name' => ['type' => 'string'], 'data' => ['type' => 'string', 'description' => 'Secret value'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['org', 'secret_name', 'data', 'instance', 'user']])]
 	public function create_or_update_org_action_secret(string $org, string $secret_name, string $data, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->put("orgs/{$org}/actions/secrets/{$secret_name}", ['data' => $data]);
 	}
 
-	#[McpTool(name: 'delete_org_action_secret', description: 'Delete an action secret from an organization.', inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string', 'description' => 'Organization name'], 'secret_name' => ['type' => 'string', 'description' => 'Secret name'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['org', 'secret_name', 'instance', 'user']])]
+	#[McpTool(name: 'delete_org_action_secret', description: 'Delete an organization action secret.', inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string'], 'secret_name' => ['type' => 'string'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['org', 'secret_name', 'instance', 'user']])]
 	public function delete_org_action_secret(string $org, string $secret_name, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);

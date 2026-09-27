@@ -22,17 +22,17 @@ class BranchTools
 
 	#[McpTool(
 		name: 'list_branches',
-		description: 'List branches of a repository.',
+		description: 'List a repository\'s branches.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'page' => ['type' => 'integer', 'description' => 'Page number (default 1)'],
-				'limit' => ['type' => 'integer', 'description' => 'Results per page (default 20)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'page' => ['type' => 'integer'],
+				'limit' => ['type' => 'integer', 'description' => 'default 20'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'instance', 'user'],
 		]
@@ -45,16 +45,16 @@ class BranchTools
 
 	#[McpTool(
 		name: 'create_branch',
-		description: 'Create a new branch in a repository.',
+		description: 'Create a branch.',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'new_branch_name' => ['type' => 'string', 'description' => 'Name for the new branch'],
-				'old_branch_name' => ['type' => 'string', 'description' => 'Branch to create from (optional, defaults to default branch)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'new_branch_name' => ['type' => 'string'],
+				'old_branch_name' => ['type' => 'string', 'description' => 'Source branch; default branch if omitted'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'new_branch_name', 'instance', 'user'],
 		]
@@ -69,15 +69,15 @@ class BranchTools
 
 	#[McpTool(
 		name: 'delete_branch',
-		description: 'Delete a branch from a repository.',
+		description: 'Delete a branch.',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'branch' => ['type' => 'string', 'description' => 'Branch name to delete'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'branch' => ['type' => 'string'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'branch', 'instance', 'user'],
 		]

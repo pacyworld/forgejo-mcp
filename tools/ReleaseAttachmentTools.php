@@ -20,35 +20,35 @@ class ReleaseAttachmentTools
 		$this->manager = $manager;
 	}
 
-	#[McpTool(name: 'list_release_attachments', description: 'List attachments of a release.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'release_id' => ['type' => 'integer', 'description' => 'Release ID'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'release_id', 'instance', 'user']])]
+	#[McpTool(name: 'list_release_attachments', description: 'List a release\'s attachments.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'release_id' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'release_id', 'instance', 'user']])]
 	public function list_release_attachments(string $owner, string $repo, int $release_id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/releases/{$release_id}/assets");
 	}
 
-	#[McpTool(name: 'get_release_attachment', description: 'Get metadata of a release attachment.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'release_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer', 'description' => 'Attachment ID'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'release_id', 'attachment_id', 'instance', 'user']])]
+	#[McpTool(name: 'get_release_attachment', description: 'Get release attachment metadata.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'release_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'release_id', 'attachment_id', 'instance', 'user']])]
 	public function get_release_attachment(string $owner, string $repo, int $release_id, int $attachment_id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/releases/{$release_id}/assets/{$attachment_id}");
 	}
 
-	#[McpTool(name: 'delete_release_attachment', description: 'Delete a release attachment.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'release_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'release_id', 'attachment_id', 'instance', 'user']])]
+	#[McpTool(name: 'delete_release_attachment', description: 'Delete a release attachment.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'release_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'release_id', 'attachment_id', 'instance', 'user']])]
 	public function delete_release_attachment(string $owner, string $repo, int $release_id, int $attachment_id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->delete("repos/{$owner}/{$repo}/releases/{$release_id}/assets/{$attachment_id}");
 	}
 
-	#[McpTool(name: 'edit_release_attachment', description: 'Edit a release attachment name.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'release_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'name' => ['type' => 'string', 'description' => 'New attachment name'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'release_id', 'attachment_id', 'name', 'instance', 'user']])]
+	#[McpTool(name: 'edit_release_attachment', description: 'Rename a release attachment.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'release_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'name' => ['type' => 'string', 'description' => 'New filename'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'release_id', 'attachment_id', 'name', 'instance', 'user']])]
 	public function edit_release_attachment(string $owner, string $repo, int $release_id, int $attachment_id, string $name, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->patch("repos/{$owner}/{$repo}/releases/{$release_id}/assets/{$attachment_id}", ['name' => $name]);
 	}
 
-	#[McpTool(name: 'create_release_attachment', description: 'Upload an attachment to a release. Provide base64-encoded file content.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'release_id' => ['type' => 'integer'], 'filename' => ['type' => 'string', 'description' => 'Filename for the attachment'], 'content' => ['type' => 'string', 'description' => 'Base64-encoded file content'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'release_id', 'filename', 'content', 'instance', 'user']])]
+	#[McpTool(name: 'create_release_attachment', description: 'Upload an attachment to a release.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'release_id' => ['type' => 'integer'], 'filename' => ['type' => 'string'], 'content' => ['type' => 'string', 'description' => 'Base64'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'release_id', 'filename', 'content', 'instance', 'user']])]
 	public function create_release_attachment(string $owner, string $repo, int $release_id, string $filename, string $content, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -59,7 +59,7 @@ class ReleaseAttachmentTools
 		return $client->uploadFile("repos/{$owner}/{$repo}/releases/{$release_id}/assets?name={$filename}", 'attachment', $filename, $decoded);
 	}
 
-	#[McpTool(name: 'download_release_attachment', description: 'Download a release attachment. Returns metadata with browser_download_url.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'release_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'release_id', 'attachment_id', 'instance', 'user']])]
+	#[McpTool(name: 'download_release_attachment', description: 'Get a release attachment\'s metadata including browser_download_url.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'release_id' => ['type' => 'integer'], 'attachment_id' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'release_id', 'attachment_id', 'instance', 'user']])]
 	public function download_release_attachment(string $owner, string $repo, int $release_id, int $attachment_id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);

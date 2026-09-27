@@ -28,15 +28,15 @@ class PullRequestTools
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'state' => ['type' => 'string', 'description' => 'State filter: open, closed, all (default open)'],
-				'sort' => ['type' => 'string', 'description' => 'Sort: oldest, recentupdate, leastupdate, mostcomment, leastcomment, priority'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'state' => ['type' => 'string', 'description' => 'open|closed|all (default open)'],
+				'sort' => ['type' => 'string', 'description' => 'oldest|recentupdate|leastupdate|mostcomment|leastcomment|priority'],
 				'labels' => ['type' => 'string', 'description' => 'Comma-separated label IDs'],
-				'page' => ['type' => 'integer', 'description' => 'Page number'],
-				'limit' => ['type' => 'integer', 'description' => 'Results per page'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'page' => ['type' => 'integer'],
+				'limit' => ['type' => 'integer', 'description' => 'default 20'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'instance', 'user'],
 		]
@@ -52,16 +52,16 @@ class PullRequestTools
 
 	#[McpTool(
 		name: 'get_pull_request_by_index',
-		description: 'Get a specific pull request by index.',
+		description: 'Get a pull request by index.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'index' => ['type' => 'integer', 'description' => 'PR index number'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'index' => ['type' => 'integer'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
@@ -74,21 +74,21 @@ class PullRequestTools
 
 	#[McpTool(
 		name: 'create_pull_request',
-		description: 'Create a new pull request.',
+		description: 'Create a pull request.',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'title' => ['type' => 'string', 'description' => 'PR title'],
-				'body' => ['type' => 'string', 'description' => 'PR body (Markdown)'],
-				'head' => ['type' => 'string', 'description' => 'Source branch (or fork_owner:branch)'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'title' => ['type' => 'string'],
+				'body' => ['type' => 'string', 'description' => 'Markdown'],
+				'head' => ['type' => 'string', 'description' => 'Source branch, or fork_owner:branch'],
 				'base' => ['type' => 'string', 'description' => 'Target branch'],
 				'labels' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Label IDs'],
 				'milestone' => ['type' => 'integer', 'description' => 'Milestone ID'],
-				'assignees' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Assignee usernames'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'assignees' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Usernames'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'title', 'head', 'base', 'instance', 'user'],
 		]
@@ -106,19 +106,19 @@ class PullRequestTools
 
 	#[McpTool(
 		name: 'update_pull_request',
-		description: 'Update a pull request.',
+		description: 'Update a pull request; only given fields change.',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'index' => ['type' => 'integer', 'description' => 'PR index number'],
-				'title' => ['type' => 'string', 'description' => 'New title'],
-				'body' => ['type' => 'string', 'description' => 'New body'],
-				'state' => ['type' => 'string', 'description' => 'New state: open or closed'],
-				'base' => ['type' => 'string', 'description' => 'New base branch'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'index' => ['type' => 'integer'],
+				'title' => ['type' => 'string'],
+				'body' => ['type' => 'string'],
+				'state' => ['type' => 'string', 'description' => 'open|closed'],
+				'base' => ['type' => 'string', 'description' => 'New target branch'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
@@ -136,19 +136,19 @@ class PullRequestTools
 
 	#[McpTool(
 		name: 'merge_pull_request',
-		description: 'Merge a pull request.',
+		description: 'Merge a pull request. On timeout the PR state is checked and reported as merged or in_progress; that is not a failure — never retry, check get_pull_request_by_index later.',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'index' => ['type' => 'integer', 'description' => 'PR index number'],
-				'Do' => ['type' => 'string', 'description' => 'Merge method: merge, rebase, rebase-merge, squash, manually-merged'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'index' => ['type' => 'integer'],
+				'Do' => ['type' => 'string', 'description' => 'merge|rebase|rebase-merge|squash|manually-merged'],
 				'merge_message_field' => ['type' => 'string', 'description' => 'Merge commit message'],
-				'delete_branch_after_merge' => ['type' => 'boolean', 'description' => 'Delete head branch after merge'],
-			'timeout' => ['type' => 'integer', 'description' => 'Request timeout in seconds (default 90; merges on large repositories can exceed the instance default)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'delete_branch_after_merge' => ['type' => 'boolean', 'description' => 'Delete head branch (default false)'],
+				'timeout' => ['type' => 'integer', 'description' => 'Seconds (default 90)'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'index', 'Do', 'instance', 'user'],
 		]
@@ -227,13 +227,13 @@ class PullRequestTools
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'index' => ['type' => 'integer', 'description' => 'PR index number'],
-				'page' => ['type' => 'integer', 'description' => 'Page number'],
-				'limit' => ['type' => 'integer', 'description' => 'Results per page'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'index' => ['type' => 'integer'],
+				'page' => ['type' => 'integer'],
+				'limit' => ['type' => 'integer', 'description' => 'default 50'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
@@ -246,16 +246,16 @@ class PullRequestTools
 
 	#[McpTool(
 		name: 'get_pull_request_diff',
-		description: 'Get the diff of a pull request.',
+		description: 'Get a pull request\'s unified diff as text.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'index' => ['type' => 'integer', 'description' => 'PR index number'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'index' => ['type' => 'integer'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]

@@ -30,8 +30,8 @@ class NotificationTools
 				'status_types' => ['type' => 'string', 'description' => 'Comma-separated: unread,read,pinned'],
 				'page' => ['type' => 'integer'],
 				'limit' => ['type' => 'integer', 'description' => 'default 20'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['instance', 'user'],
 		]
@@ -51,9 +51,9 @@ class NotificationTools
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'id' => ['type' => 'integer'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'id' => ['type' => 'integer', 'description' => 'Notification thread ID'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['id', 'instance', 'user'],
 		]
@@ -70,9 +70,9 @@ class NotificationTools
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'id' => ['type' => 'integer'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'id' => ['type' => 'integer', 'description' => 'Notification thread ID'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['id', 'instance', 'user'],
 		]
@@ -89,8 +89,8 @@ class NotificationTools
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['instance', 'user'],
 		]
@@ -113,8 +113,8 @@ class NotificationTools
 				'status_types' => ['type' => 'string', 'description' => 'Comma-separated: unread,read,pinned'],
 				'page' => ['type' => 'integer'],
 				'limit' => ['type' => 'integer', 'description' => 'default 20'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['owner', 'repo', 'instance', 'user'],
 		]
@@ -135,8 +135,8 @@ class NotificationTools
 			'properties' => [
 				'owner' => ['type' => 'string'],
 				'repo' => ['type' => 'string'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['owner', 'repo', 'instance', 'user'],
 		]

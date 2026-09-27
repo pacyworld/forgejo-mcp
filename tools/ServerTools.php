@@ -30,7 +30,7 @@ class ServerTools
 		];
 	}
 
-	#[McpTool(name: 'get_forgejo_version', description: 'Get an instance\'s Forgejo version and supported version-gated features (action_logs_api needs Forgejo 16+).', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['instance', 'user']])]
+	#[McpTool(name: 'get_forgejo_version', description: 'Get an instance\'s Forgejo version and supported version-gated features (action_logs_api needs Forgejo 16+).', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'], 'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)']], 'required' => ['instance', 'user']])]
 	public function get_forgejo_version(string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);

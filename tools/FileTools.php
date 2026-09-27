@@ -31,8 +31,8 @@ class FileTools
 				'repo' => ['type' => 'string'],
 				'filepath' => ['type' => 'string'],
 				'ref' => ['type' => 'string', 'description' => 'Branch, tag or SHA; default branch if omitted'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['owner', 'repo', 'filepath', 'instance', 'user'],
 		]
@@ -65,8 +65,8 @@ class FileTools
 				'message' => ['type' => 'string', 'description' => 'Commit message'],
 				'branch' => ['type' => 'string', 'description' => 'Branch to commit to'],
 				'new_branch' => ['type' => 'string', 'description' => 'Commit to a new branch with this name'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['owner', 'repo', 'filepath', 'content', 'message', 'instance', 'user'],
 		]
@@ -97,8 +97,8 @@ class FileTools
 				'sha' => ['type' => 'string', 'description' => 'Current file SHA (from get_file_content)'],
 				'branch' => ['type' => 'string', 'description' => 'Branch to commit to'],
 				'new_branch' => ['type' => 'string', 'description' => 'Commit to a new branch with this name'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['owner', 'repo', 'filepath', 'content', 'message', 'sha', 'instance', 'user'],
 		]
@@ -128,8 +128,8 @@ class FileTools
 				'message' => ['type' => 'string', 'description' => 'Commit message'],
 				'sha' => ['type' => 'string', 'description' => 'Current file SHA (from get_file_content)'],
 				'branch' => ['type' => 'string'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['owner', 'repo', 'filepath', 'message', 'sha', 'instance', 'user'],
 		]

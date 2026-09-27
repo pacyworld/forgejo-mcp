@@ -35,8 +35,8 @@ class PullRequestTools
 				'labels' => ['type' => 'string', 'description' => 'Comma-separated label IDs'],
 				'page' => ['type' => 'integer'],
 				'limit' => ['type' => 'integer', 'description' => 'default 20'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['owner', 'repo', 'instance', 'user'],
 		]
@@ -52,16 +52,16 @@ class PullRequestTools
 
 	#[McpTool(
 		name: 'get_pull_request_by_index',
-		description: 'Get a pull request by index.',
+		description: 'Get a pull request by number.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
 				'owner' => ['type' => 'string'],
 				'repo' => ['type' => 'string'],
-				'index' => ['type' => 'integer'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'index' => ['type' => 'integer', 'description' => 'Pull request number'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
@@ -87,8 +87,8 @@ class PullRequestTools
 				'labels' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Label IDs'],
 				'milestone' => ['type' => 'integer', 'description' => 'Milestone ID'],
 				'assignees' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Usernames'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['owner', 'repo', 'title', 'head', 'base', 'instance', 'user'],
 		]
@@ -112,13 +112,13 @@ class PullRequestTools
 			'properties' => [
 				'owner' => ['type' => 'string'],
 				'repo' => ['type' => 'string'],
-				'index' => ['type' => 'integer'],
+				'index' => ['type' => 'integer', 'description' => 'Pull request number'],
 				'title' => ['type' => 'string'],
 				'body' => ['type' => 'string'],
 				'state' => ['type' => 'string', 'description' => 'open|closed'],
 				'base' => ['type' => 'string', 'description' => 'New target branch'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
@@ -142,13 +142,13 @@ class PullRequestTools
 			'properties' => [
 				'owner' => ['type' => 'string'],
 				'repo' => ['type' => 'string'],
-				'index' => ['type' => 'integer'],
+				'index' => ['type' => 'integer', 'description' => 'Pull request number'],
 				'Do' => ['type' => 'string', 'description' => 'merge|rebase|rebase-merge|squash|manually-merged'],
 				'merge_message_field' => ['type' => 'string', 'description' => 'Merge commit message'],
 				'delete_branch_after_merge' => ['type' => 'boolean', 'description' => 'Delete head branch (default false)'],
 				'timeout' => ['type' => 'integer', 'description' => 'Seconds (default 90)'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['owner', 'repo', 'index', 'Do', 'instance', 'user'],
 		]
@@ -229,11 +229,11 @@ class PullRequestTools
 			'properties' => [
 				'owner' => ['type' => 'string'],
 				'repo' => ['type' => 'string'],
-				'index' => ['type' => 'integer'],
+				'index' => ['type' => 'integer', 'description' => 'Pull request number'],
 				'page' => ['type' => 'integer'],
 				'limit' => ['type' => 'integer', 'description' => 'default 50'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
@@ -253,9 +253,9 @@ class PullRequestTools
 			'properties' => [
 				'owner' => ['type' => 'string'],
 				'repo' => ['type' => 'string'],
-				'index' => ['type' => 'integer'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'index' => ['type' => 'integer', 'description' => 'Pull request number'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]

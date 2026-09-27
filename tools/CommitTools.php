@@ -20,7 +20,7 @@ class CommitTools
 		$this->manager = $manager;
 	}
 
-	#[McpTool(name: 'list_repo_commits', description: 'List commits in a repository.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'sha' => ['type' => 'string', 'description' => 'Branch or commit SHA to start from'], 'path' => ['type' => 'string', 'description' => 'Only commits touching this path'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer', 'description' => 'default 20'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'instance', 'user']])]
+	#[McpTool(name: 'list_repo_commits', description: 'List commits in a repository.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'sha' => ['type' => 'string', 'description' => 'Branch or commit SHA to start from'], 'path' => ['type' => 'string', 'description' => 'Only commits touching this path'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer', 'description' => 'default 20'], 'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'], 'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)']], 'required' => ['owner', 'repo', 'instance', 'user']])]
 	public function list_repo_commits(string $owner, string $repo, ?string $sha = null, ?string $path = null, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);

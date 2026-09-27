@@ -35,8 +35,8 @@ class IssueTools
 				'page' => ['type' => 'integer'],
 				'limit' => ['type' => 'integer', 'description' => 'default 20'],
 				'type' => ['type' => 'string', 'description' => 'issues|pulls (default issues)'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['owner', 'repo', 'instance', 'user'],
 		]
@@ -52,16 +52,16 @@ class IssueTools
 
 	#[McpTool(
 		name: 'get_issue_by_index',
-		description: 'Get an issue by index.',
+		description: 'Get an issue by number.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
 				'owner' => ['type' => 'string'],
 				'repo' => ['type' => 'string'],
-				'index' => ['type' => 'integer'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'index' => ['type' => 'integer', 'description' => 'Issue number'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
@@ -85,8 +85,8 @@ class IssueTools
 				'labels' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Label IDs'],
 				'milestone' => ['type' => 'integer', 'description' => 'Milestone ID'],
 				'assignees' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Usernames'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['owner', 'repo', 'title', 'instance', 'user'],
 		]
@@ -110,14 +110,14 @@ class IssueTools
 			'properties' => [
 				'owner' => ['type' => 'string'],
 				'repo' => ['type' => 'string'],
-				'index' => ['type' => 'integer'],
+				'index' => ['type' => 'integer', 'description' => 'Issue number'],
 				'title' => ['type' => 'string'],
 				'body' => ['type' => 'string'],
 				'state' => ['type' => 'string', 'description' => 'open|closed'],
 				'milestone' => ['type' => 'integer', 'description' => 'Milestone ID; 0 clears'],
 				'assignees' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Usernames'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
@@ -142,10 +142,10 @@ class IssueTools
 			'properties' => [
 				'owner' => ['type' => 'string'],
 				'repo' => ['type' => 'string'],
-				'index' => ['type' => 'integer'],
+				'index' => ['type' => 'integer', 'description' => 'Issue number'],
 				'state' => ['type' => 'string', 'description' => 'open|closed'],
-				'instance' => ['type' => 'string'],
-				'user' => ['type' => 'string'],
+				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
+				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
 			],
 			'required' => ['owner', 'repo', 'index', 'state', 'instance', 'user'],
 		]

@@ -31,8 +31,8 @@ class LabelTools
 				'repo' => ['type' => 'string'],
 				'page' => ['type' => 'integer'],
 				'limit' => ['type' => 'integer', 'description' => 'default 20'],
-				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
-				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'instance', 'user'],
 		]
@@ -53,8 +53,8 @@ class LabelTools
 				'org' => ['type' => 'string'],
 				'page' => ['type' => 'integer'],
 				'limit' => ['type' => 'integer', 'description' => 'default 20'],
-				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
-				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['org', 'instance', 'user'],
 		]
@@ -73,10 +73,10 @@ class LabelTools
 			'properties' => [
 				'owner' => ['type' => 'string'],
 				'repo' => ['type' => 'string'],
-				'index' => ['type' => 'integer', 'description' => 'Issue or PR number'],
+				'index' => ['type' => 'integer'],
 				'labels' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Label IDs'],
-				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
-				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'index', 'labels', 'instance', 'user'],
 		]
@@ -95,10 +95,10 @@ class LabelTools
 			'properties' => [
 				'owner' => ['type' => 'string'],
 				'repo' => ['type' => 'string'],
-				'index' => ['type' => 'integer', 'description' => 'Issue or PR number'],
+				'index' => ['type' => 'integer'],
 				'label_id' => ['type' => 'integer'],
-				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
-				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'index', 'label_id', 'instance', 'user'],
 		]

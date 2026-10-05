@@ -30,8 +30,8 @@ class UserTools
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
-				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['instance', 'user'],
 		]
@@ -55,8 +55,8 @@ class UserTools
 				'q' => ['type' => 'string'],
 				'limit' => ['type' => 'integer', 'description' => 'default 10'],
 				'page' => ['type' => 'integer'],
-				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
-				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['q', 'instance', 'user'],
 		]

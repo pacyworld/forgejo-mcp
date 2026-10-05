@@ -31,8 +31,8 @@ class BranchTools
 				'repo' => ['type' => 'string'],
 				'page' => ['type' => 'integer'],
 				'limit' => ['type' => 'integer', 'description' => 'default 20'],
-				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
-				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'instance', 'user'],
 		]
@@ -53,8 +53,8 @@ class BranchTools
 				'repo' => ['type' => 'string'],
 				'new_branch_name' => ['type' => 'string'],
 				'old_branch_name' => ['type' => 'string', 'description' => 'Source branch; default branch if omitted'],
-				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
-				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'new_branch_name', 'instance', 'user'],
 		]
@@ -76,8 +76,8 @@ class BranchTools
 				'owner' => ['type' => 'string'],
 				'repo' => ['type' => 'string'],
 				'branch' => ['type' => 'string'],
-				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
-				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'branch', 'instance', 'user'],
 		]

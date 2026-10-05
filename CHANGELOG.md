@@ -3,7 +3,10 @@
 ## Unreleased
 
 ### Changed
-- Tool definitions are tighter: descriptions that only restated an obvious name (`owner`, `repo`, `page`, `limit`, ...) are dropped and tool descriptions rewritten concisely. Every tool stays self-contained for clients that never show server instructions: `instance`, `user`, `index` and ID parameters carry short descriptions on each tool. Tool names, parameters, types and required lists are unchanged.
+- Tool definitions are more compact: filler parameter descriptions (`owner`, `repo`, `instance`, `user`, `page`, ...) are dropped and tool descriptions tightened, cutting the `tools/list` payload from 75,305 to 57,353 bytes (15,515 to 12,380 tokens, Qwen3-8B tokenizer, OpenAI function-array form). Tool names, parameters, types and required lists are unchanged; the server instructions explain the shared `instance`/`user`/`owner`/`repo`/`index` parameters once.
+
+### Added
+- `tests/measure-tools-list.php` — serializes the tool catalog in OpenAI function-array form and reports its cost in bytes and, when `tests/count-tokens.py` can run (python3 + `tokenizers`, optional), Qwen3 tokens. `--check` enforces `tests/tools-list.budget`; CI fails on any change that grows the catalog (#11, phase 1).
 
 ## [1.3.1] - 2026-09-11
 

@@ -29,11 +29,11 @@ class CommentTools
 			'properties' => [
 				'owner' => ['type' => 'string'],
 				'repo' => ['type' => 'string'],
-				'index' => ['type' => 'integer', 'description' => 'Issue or PR number'],
+				'index' => ['type' => 'integer'],
 				'page' => ['type' => 'integer'],
 				'limit' => ['type' => 'integer', 'description' => 'default 20'],
-				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
-				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
@@ -53,9 +53,9 @@ class CommentTools
 			'properties' => [
 				'owner' => ['type' => 'string'],
 				'repo' => ['type' => 'string'],
-				'id' => ['type' => 'integer', 'description' => 'Comment ID'],
-				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
-				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
+				'id' => ['type' => 'integer'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'id', 'instance', 'user'],
 		]
@@ -74,10 +74,10 @@ class CommentTools
 			'properties' => [
 				'owner' => ['type' => 'string'],
 				'repo' => ['type' => 'string'],
-				'index' => ['type' => 'integer', 'description' => 'Issue or PR number'],
+				'index' => ['type' => 'integer'],
 				'body' => ['type' => 'string', 'description' => 'Markdown'],
-				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
-				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'index', 'body', 'instance', 'user'],
 		]
@@ -96,10 +96,10 @@ class CommentTools
 			'properties' => [
 				'owner' => ['type' => 'string'],
 				'repo' => ['type' => 'string'],
-				'id' => ['type' => 'integer', 'description' => 'Comment ID'],
+				'id' => ['type' => 'integer'],
 				'body' => ['type' => 'string', 'description' => 'Markdown'],
-				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
-				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'id', 'body', 'instance', 'user'],
 		]
@@ -118,9 +118,9 @@ class CommentTools
 			'properties' => [
 				'owner' => ['type' => 'string'],
 				'repo' => ['type' => 'string'],
-				'id' => ['type' => 'integer', 'description' => 'Comment ID'],
-				'instance' => ['type' => 'string', 'description' => 'Instance name (see list_forgejo_instances)'],
-				'user' => ['type' => 'string', 'description' => 'User identity for the instance (see list_forgejo_instances)'],
+				'id' => ['type' => 'integer'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'id', 'instance', 'user'],
 		]

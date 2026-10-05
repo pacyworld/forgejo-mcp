@@ -2,6 +2,9 @@
 /**
  * Forgejo MCP Server — Release Tools
  *
+ * Consolidated: one `release` tool whose `action` selects the operation.
+ * Attachments live in the `attachment` tool (target=release).
+ *
  * @package    ForgejoMCP\Tools
  * @author     Daniel Morante
  * @copyright  2026 The Daniel Morante Company, Inc.
@@ -9,46 +12,84 @@
  */
 
 use EnchiladaMCP\McpTool;
+use Forgejo\ConsolidatedToolBase;
 use Forgejo\InstanceManager;
 
-class ReleaseTools
+class ReleaseTools extends ConsolidatedToolBase
 {
-	private InstanceManager $manager;
-
-	public function __construct(InstanceManager $manager)
+	#[McpTool(
+		name: 'release',
+		description: 'Manage releases. Actions and their required parameters: list(owner, repo), get_by_id(owner, repo, id), get_by_tag(owner, repo, tag), latest(owner, repo), create(owner, repo, tag_name; optional name, body, draft, prerelease, target_commitish), edit(owner, repo, id; only given fields change), delete(owner, repo, id), delete_by_tag(owner, repo, tag). Attachments: use attachment target=release.',
+		inputSchema: [
+			'type' => 'object',
+			'properties' => [
+				'action' => ['type' => 'string', 'enum' => ['list', 'get_by_id', 'get_by_tag', 'latest', 'create', 'edit', 'delete', 'delete_by_tag']],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'id' => ['type' => 'integer'],
+				'tag' => ['type' => 'string'],
+				'tag_name' => ['type' => 'string'],
+				'name' => ['type' => 'string', 'description' => 'Release title'],
+				'body' => ['type' => 'string', 'description' => 'Release notes (Markdown)'],
+				'draft' => ['type' => 'boolean'],
+				'prerelease' => ['type' => 'boolean'],
+				'target_commitish' => ['type' => 'string', 'description' => 'Branch or SHA to tag'],
+				'page' => ['type' => 'integer'],
+				'limit' => ['type' => 'integer', 'description' => 'default 20'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
+			],
+			'required' => ['action', 'instance', 'user'],
+		],
+		renamedFrom: [
+			'list_releases' => 'release action=list',
+			'get_release_by_id' => 'release action=get_by_id',
+			'get_release_by_tag' => 'release action=get_by_tag',
+			'get_latest_release' => 'release action=latest',
+			'create_release' => 'release action=create',
+			'edit_release' => 'release action=edit',
+			'delete_release' => 'release action=delete',
+			'delete_release_by_tag' => 'release action=delete_by_tag',
+		]
+	)]
+	public function release(string $action, ?string $owner = null, ?string $repo = null, ?int $id = null, ?string $tag = null, ?string $tag_name = null, ?string $name = null, ?string $body = null, ?bool $draft = null, ?bool $prerelease = null, ?string $target_commitish = null, ?int $page = null, ?int $limit = null, string $instance = '', string $user = ''): mixed
 	{
-		$this->manager = $manager;
+		return $this->dispatch('release', $action, get_defined_vars(), [
+			'list' => ['handler' => [$this, 'list_releases'], 'required' => ['owner', 'repo'], 'args' => ['owner', 'repo', 'page', 'limit', 'instance', 'user']],
+			'get_by_id' => ['handler' => [$this, 'get_release_by_id'], 'required' => ['owner', 'repo', 'id'], 'args' => ['owner', 'repo', 'id', 'instance', 'user']],
+			'get_by_tag' => ['handler' => [$this, 'get_release_by_tag'], 'required' => ['owner', 'repo', 'tag'], 'args' => ['owner', 'repo', 'tag', 'instance', 'user']],
+			'latest' => ['handler' => [$this, 'get_latest_release'], 'required' => ['owner', 'repo'], 'args' => ['owner', 'repo', 'instance', 'user']],
+			'create' => ['handler' => [$this, 'create_release'], 'required' => ['owner', 'repo', 'tag_name'], 'args' => ['owner', 'repo', 'tag_name', 'name', 'body', 'draft', 'prerelease', 'target_commitish', 'instance', 'user']],
+			'edit' => ['handler' => [$this, 'edit_release'], 'required' => ['owner', 'repo', 'id'], 'args' => ['owner', 'repo', 'id', 'tag_name', 'name', 'body', 'draft', 'prerelease', 'instance', 'user']],
+			'delete' => ['handler' => [$this, 'delete_release'], 'required' => ['owner', 'repo', 'id'], 'args' => ['owner', 'repo', 'id', 'instance', 'user']],
+			'delete_by_tag' => ['handler' => [$this, 'delete_release_by_tag'], 'required' => ['owner', 'repo', 'tag'], 'args' => ['owner', 'repo', 'tag', 'instance', 'user']],
+		]);
 	}
 
-	#[McpTool(name: 'list_releases', description: 'List a repository\'s releases.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer', 'description' => 'default 20'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'instance', 'user']])]
 	public function list_releases(string $owner, string $repo, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/releases", ['page' => $page, 'limit' => $limit]);
 	}
 
-	#[McpTool(name: 'get_release_by_id', description: 'Get a release by ID.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'id' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'id', 'instance', 'user']])]
 	public function get_release_by_id(string $owner, string $repo, int $id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/releases/{$id}");
 	}
 
-	#[McpTool(name: 'get_release_by_tag', description: 'Get a release by tag name.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'tag' => ['type' => 'string'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'tag', 'instance', 'user']])]
 	public function get_release_by_tag(string $owner, string $repo, string $tag, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/releases/tags/{$tag}");
 	}
 
-	#[McpTool(name: 'get_latest_release', description: 'Get a repository\'s latest release.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'instance', 'user']])]
 	public function get_latest_release(string $owner, string $repo, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/releases/latest");
 	}
 
-	#[McpTool(name: 'create_release', description: 'Create a release (creates the tag if missing).', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'tag_name' => ['type' => 'string'], 'name' => ['type' => 'string', 'description' => 'Release title'], 'body' => ['type' => 'string', 'description' => 'Release notes (Markdown)'], 'draft' => ['type' => 'boolean'], 'prerelease' => ['type' => 'boolean'], 'target_commitish' => ['type' => 'string', 'description' => 'Branch or SHA to tag'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'tag_name', 'instance', 'user']])]
 	public function create_release(string $owner, string $repo, string $tag_name, string $name = '', string $body = '', bool $draft = false, bool $prerelease = false, ?string $target_commitish = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -59,7 +100,6 @@ class ReleaseTools
 		return $client->post("repos/{$owner}/{$repo}/releases", $data);
 	}
 
-	#[McpTool(name: 'edit_release', description: 'Edit a release; only given fields change.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'id' => ['type' => 'integer'], 'tag_name' => ['type' => 'string'], 'name' => ['type' => 'string'], 'body' => ['type' => 'string'], 'draft' => ['type' => 'boolean'], 'prerelease' => ['type' => 'boolean'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'id', 'instance', 'user']])]
 	public function edit_release(string $owner, string $repo, int $id, ?string $tag_name = null, ?string $name = null, ?string $body = null, ?bool $draft = null, ?bool $prerelease = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -72,14 +112,12 @@ class ReleaseTools
 		return $client->patch("repos/{$owner}/{$repo}/releases/{$id}", $data);
 	}
 
-	#[McpTool(name: 'delete_release', description: 'Delete a release by ID.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'id' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'id', 'instance', 'user']])]
 	public function delete_release(string $owner, string $repo, int $id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->delete("repos/{$owner}/{$repo}/releases/{$id}");
 	}
 
-	#[McpTool(name: 'delete_release_by_tag', description: 'Delete a release by tag name.', inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'tag' => ['type' => 'string'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['owner', 'repo', 'tag', 'instance', 'user']])]
 	public function delete_release_by_tag(string $owner, string $repo, string $tag, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);

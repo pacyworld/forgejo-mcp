@@ -1,10 +1,10 @@
-Forgejo MCP server for managing Forgejo/Gitea instances. Supports multiple instances and users.
+Forgejo MCP server for Forgejo/Gitea instances. Multiple instances and users per server.
 
-Every tool except list_forgejo_instances and get_forgejo_mcp_server_version requires 'instance' (Forgejo instance name) and 'user' (configured user identity); list_forgejo_instances shows the valid values. 'owner'/'repo' identify a repository; 'index' is the issue/PR number.
+Every tool except list_forgejo_instances and get_forgejo_mcp_server_version takes 'instance' and 'user' (list_forgejo_instances shows the valid values). 'owner'/'repo' identify a repository; 'index' is the issue/PR number.
 
-Covers repositories, issues, pull requests and reviews, files, branches, tags, releases, packages, organizations and teams, notifications, time tracking, push mirrors, and Actions (runs, jobs, logs, secrets).
+Most resource families are one tool selected by an 'action' enum; the tool description lists each action's required parameters, and the server rejects calls missing them with an error naming what is missing. High-traffic tools stay standalone (create_issue, list_repo_issues, get_issue_by_index, create_pull_request, merge_pull_request, get_file_content). docs/TOOLS.md maps pre-2.0.0 tool names to replacements; unknown-tool errors include the replacement tool and action.
 
 Tips:
-- Action log download via REST requires Forgejo 16+; get_forgejo_version reports what an instance supports.
+- workflow action=job_logs_by_id and download_run_logs require Forgejo 16+; get_forgejo_version reports what an instance supports.
 - Resources (forgejo:// URIs) provide read-only access to specific entities by URI.
-- A merge_pull_request timeout is NOT a failure: the tool reports 'merged' or 'in_progress'. Never retry a merge after a timeout; check get_pull_request_by_index instead.
+- A merge_pull_request timeout is NOT a failure: the tool reports 'merged' or 'in_progress'. Never retry a merge after a timeout; check the PR with pull_request action=get instead.

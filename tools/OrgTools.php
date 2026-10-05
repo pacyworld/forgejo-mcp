@@ -1,6 +1,10 @@
 <?php
 /**
- * Forgejo MCP Server — Organization Tools
+ * Forgejo MCP Server — Organization & Team Tools
+ *
+ * Consolidated: `org` covers organization and membership operations, `team`
+ * covers team operations. The per-operation methods remain as internal
+ * handlers.
  *
  * @package    ForgejoMCP\Tools
  * @author     Daniel Morante
@@ -9,25 +13,109 @@
  */
 
 use EnchiladaMCP\McpTool;
+use Forgejo\ConsolidatedToolBase;
 use Forgejo\InstanceManager;
 
-class OrgTools
+class OrgTools extends ConsolidatedToolBase
 {
-	private InstanceManager $manager;
-
-	public function __construct(InstanceManager $manager)
+	#[McpTool(
+		name: 'org',
+		description: 'Manage organizations and membership. Actions and their required parameters: get(org), create(username; optional full_name, description, visibility), edit(org; only given fields change), delete(org; irreversible), list_mine, list_user(username), list_members(org), check_membership(org, username), remove_member(org, username).',
+		inputSchema: [
+			'type' => 'object',
+			'properties' => [
+				'action' => ['type' => 'string', 'enum' => ['get', 'create', 'edit', 'delete', 'list_mine', 'list_user', 'list_members', 'check_membership', 'remove_member']],
+				'org' => ['type' => 'string'],
+				'username' => ['type' => 'string', 'description' => 'Organization name on create; the member everywhere else'],
+				'full_name' => ['type' => 'string', 'description' => 'Display name'],
+				'description' => ['type' => 'string'],
+				'visibility' => ['type' => 'string', 'description' => 'public|limited|private (default public)'],
+				'page' => ['type' => 'integer'],
+				'limit' => ['type' => 'integer'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
+			],
+			'required' => ['action', 'instance', 'user'],
+		],
+		renamedFrom: [
+			'get_org' => 'org action=get',
+			'create_org' => 'org action=create',
+			'edit_org' => 'org action=edit',
+			'delete_org' => 'org action=delete',
+			'list_my_orgs' => 'org action=list_mine',
+			'list_user_orgs' => 'org action=list_user',
+			'list_org_members' => 'org action=list_members',
+			'check_org_membership' => 'org action=check_membership',
+			'remove_org_member' => 'org action=remove_member',
+		]
+	)]
+	public function org(string $action, ?string $org = null, ?string $username = null, ?string $full_name = null, ?string $description = null, ?string $visibility = null, ?int $page = null, ?int $limit = null, string $instance = '', string $user = ''): mixed
 	{
-		$this->manager = $manager;
+		return $this->dispatch('org', $action, get_defined_vars(), [
+			'get' => ['handler' => [$this, 'get_org'], 'required' => ['org'], 'args' => ['org', 'instance', 'user']],
+			'create' => ['handler' => [$this, 'create_org'], 'required' => ['username'], 'args' => ['username', 'full_name', 'description', 'visibility', 'instance', 'user']],
+			'edit' => ['handler' => [$this, 'edit_org'], 'required' => ['org'], 'args' => ['org', 'full_name', 'description', 'visibility', 'instance', 'user']],
+			'delete' => ['handler' => [$this, 'delete_org'], 'required' => ['org'], 'args' => ['org', 'instance', 'user']],
+			'list_mine' => ['handler' => [$this, 'list_my_orgs'], 'required' => [], 'args' => ['page', 'limit', 'instance', 'user']],
+			'list_user' => ['handler' => [$this, 'list_user_orgs'], 'required' => ['username'], 'args' => ['username', 'page', 'limit', 'instance', 'user']],
+			'list_members' => ['handler' => [$this, 'list_org_members'], 'required' => ['org'], 'args' => ['org', 'page', 'limit', 'instance', 'user']],
+			'check_membership' => ['handler' => [$this, 'check_org_membership'], 'required' => ['org', 'username'], 'args' => ['org', 'username', 'instance', 'user']],
+			'remove_member' => ['handler' => [$this, 'remove_org_member'], 'required' => ['org', 'username'], 'args' => ['org', 'username', 'instance', 'user']],
+		]);
 	}
 
-	#[McpTool(name: 'get_org', description: 'Get organization details.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['org', 'instance', 'user']])]
+	#[McpTool(
+		name: 'team',
+		description: 'Manage organization teams. Actions and their required parameters: list(org), search(org; optional q), create(org, name; optional description, permission, units), add_member(team_id, username), remove_member(team_id, username), add_repo(team_id, org, repo), remove_repo(team_id, org, repo).',
+		inputSchema: [
+			'type' => 'object',
+			'properties' => [
+				'action' => ['type' => 'string', 'enum' => ['list', 'search', 'create', 'add_member', 'remove_member', 'add_repo', 'remove_repo']],
+				'org' => ['type' => 'string'],
+				'team_id' => ['type' => 'integer'],
+				'name' => ['type' => 'string'],
+				'description' => ['type' => 'string'],
+				'permission' => ['type' => 'string', 'description' => 'read|write|admin|owner (default read)'],
+				'units' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'e.g. repo.code, repo.issues, repo.pulls'],
+				'username' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'q' => ['type' => 'string'],
+				'page' => ['type' => 'integer'],
+				'limit' => ['type' => 'integer'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
+			],
+			'required' => ['action', 'instance', 'user'],
+		],
+		renamedFrom: [
+			'list_org_teams' => 'team action=list',
+			'search_org_teams' => 'team action=search',
+			'create_org_team' => 'team action=create',
+			'add_team_member' => 'team action=add_member',
+			'remove_team_member' => 'team action=remove_member',
+			'add_team_repo' => 'team action=add_repo',
+			'remove_team_repo' => 'team action=remove_repo',
+		]
+	)]
+	public function team(string $action, ?string $org = null, ?int $team_id = null, ?string $name = null, ?string $description = null, ?string $permission = null, ?array $units = null, ?string $username = null, ?string $repo = null, ?string $q = null, ?int $page = null, ?int $limit = null, string $instance = '', string $user = ''): mixed
+	{
+		return $this->dispatch('team', $action, get_defined_vars(), [
+			'list' => ['handler' => [$this, 'list_org_teams'], 'required' => ['org'], 'args' => ['org', 'page', 'limit', 'instance', 'user']],
+			'search' => ['handler' => [$this, 'search_org_teams'], 'required' => ['org'], 'args' => ['org', 'q', 'page', 'limit', 'instance', 'user']],
+			'create' => ['handler' => [$this, 'create_org_team'], 'required' => ['org', 'name'], 'args' => ['org', 'name', 'description', 'permission', 'units', 'instance', 'user']],
+			'add_member' => ['handler' => [$this, 'add_team_member'], 'required' => ['team_id', 'username'], 'args' => ['team_id', 'username', 'instance', 'user']],
+			'remove_member' => ['handler' => [$this, 'remove_team_member'], 'required' => ['team_id', 'username'], 'args' => ['team_id', 'username', 'instance', 'user']],
+			'add_repo' => ['handler' => [$this, 'add_team_repo'], 'required' => ['team_id', 'org', 'repo'], 'args' => ['team_id', 'org', 'repo', 'instance', 'user']],
+			'remove_repo' => ['handler' => [$this, 'remove_team_repo'], 'required' => ['team_id', 'org', 'repo'], 'args' => ['team_id', 'org', 'repo', 'instance', 'user']],
+		]);
+	}
+
 	public function get_org(string $org, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("orgs/{$org}");
 	}
 
-	#[McpTool(name: 'create_org', description: 'Create an organization.', inputSchema: ['type' => 'object', 'properties' => ['username' => ['type' => 'string', 'description' => 'Organization name'], 'full_name' => ['type' => 'string', 'description' => 'Display name'], 'description' => ['type' => 'string'], 'visibility' => ['type' => 'string', 'description' => 'public|limited|private (default public)'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['username', 'instance', 'user']])]
 	public function create_org(string $username, string $full_name = '', string $description = '', string $visibility = 'public', string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -37,7 +125,6 @@ class OrgTools
 		return $client->post('orgs', $data);
 	}
 
-	#[McpTool(name: 'edit_org', description: 'Edit organization settings; only given fields change.', inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string'], 'full_name' => ['type' => 'string'], 'description' => ['type' => 'string'], 'visibility' => ['type' => 'string', 'description' => 'public|limited|private'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['org', 'instance', 'user']])]
 	public function edit_org(string $org, ?string $full_name = null, ?string $description = null, ?string $visibility = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -48,56 +135,48 @@ class OrgTools
 		return $client->patch("orgs/{$org}", $data);
 	}
 
-	#[McpTool(name: 'delete_org', description: 'Delete an organization. Irreversible.', inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['org', 'instance', 'user']])]
 	public function delete_org(string $org, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->delete("orgs/{$org}");
 	}
 
-	#[McpTool(name: 'list_my_orgs', description: 'List organizations the authenticated user belongs to.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['instance', 'user']])]
 	public function list_my_orgs(int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get('user/orgs', ['page' => $page, 'limit' => $limit]);
 	}
 
-	#[McpTool(name: 'list_user_orgs', description: "List a user's organizations.", readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['username' => ['type' => 'string'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['username', 'instance', 'user']])]
 	public function list_user_orgs(string $username, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("users/{$username}/orgs", ['page' => $page, 'limit' => $limit]);
 	}
 
-	#[McpTool(name: 'list_org_members', description: 'List members of an organization.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['org', 'instance', 'user']])]
 	public function list_org_members(string $org, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("orgs/{$org}/members", ['page' => $page, 'limit' => $limit]);
 	}
 
-	#[McpTool(name: 'check_org_membership', description: 'Check whether a user is a member of an organization.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string'], 'username' => ['type' => 'string'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['org', 'username', 'instance', 'user']])]
 	public function check_org_membership(string $org, string $username, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("orgs/{$org}/members/{$username}");
 	}
 
-	#[McpTool(name: 'remove_org_member', description: 'Remove a member from an organization.', inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string'], 'username' => ['type' => 'string'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['org', 'username', 'instance', 'user']])]
 	public function remove_org_member(string $org, string $username, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->delete("orgs/{$org}/members/{$username}");
 	}
 
-	#[McpTool(name: 'list_org_teams', description: 'List teams in an organization.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['org', 'instance', 'user']])]
 	public function list_org_teams(string $org, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("orgs/{$org}/teams", ['page' => $page, 'limit' => $limit]);
 	}
 
-	#[McpTool(name: 'search_org_teams', description: 'Search an organization\'s teams by name.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string'], 'q' => ['type' => 'string'], 'page' => ['type' => 'integer'], 'limit' => ['type' => 'integer'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['org', 'instance', 'user']])]
 	public function search_org_teams(string $org, ?string $q = null, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -106,7 +185,6 @@ class OrgTools
 		return $client->get("orgs/{$org}/teams/search", $query);
 	}
 
-	#[McpTool(name: 'create_org_team', description: 'Create a team in an organization.', inputSchema: ['type' => 'object', 'properties' => ['org' => ['type' => 'string'], 'name' => ['type' => 'string'], 'description' => ['type' => 'string'], 'permission' => ['type' => 'string', 'description' => 'read|write|admin|owner (default read)'], 'units' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'e.g. repo.code, repo.issues, repo.pulls'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['org', 'name', 'instance', 'user']])]
 	public function create_org_team(string $org, string $name, string $description = '', string $permission = 'read', ?array $units = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -116,28 +194,24 @@ class OrgTools
 		return $client->post("orgs/{$org}/teams", $data);
 	}
 
-	#[McpTool(name: 'add_team_member', description: 'Add a user to a team.', inputSchema: ['type' => 'object', 'properties' => ['team_id' => ['type' => 'integer'], 'username' => ['type' => 'string'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['team_id', 'username', 'instance', 'user']])]
 	public function add_team_member(int $team_id, string $username, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->put("teams/{$team_id}/members/{$username}");
 	}
 
-	#[McpTool(name: 'remove_team_member', description: 'Remove a user from a team.', inputSchema: ['type' => 'object', 'properties' => ['team_id' => ['type' => 'integer'], 'username' => ['type' => 'string'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['team_id', 'username', 'instance', 'user']])]
 	public function remove_team_member(int $team_id, string $username, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->delete("teams/{$team_id}/members/{$username}");
 	}
 
-	#[McpTool(name: 'add_team_repo', description: 'Add an organization repository to a team.', inputSchema: ['type' => 'object', 'properties' => ['team_id' => ['type' => 'integer'], 'org' => ['type' => 'string', 'description' => 'Organization owning the repo'], 'repo' => ['type' => 'string'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['team_id', 'org', 'repo', 'instance', 'user']])]
 	public function add_team_repo(int $team_id, string $org, string $repo, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->put("teams/{$team_id}/repos/{$org}/{$repo}");
 	}
 
-	#[McpTool(name: 'remove_team_repo', description: 'Remove a repository from a team.', inputSchema: ['type' => 'object', 'properties' => ['team_id' => ['type' => 'integer'], 'org' => ['type' => 'string'], 'repo' => ['type' => 'string'], 'instance' => ['type' => 'string'], 'user' => ['type' => 'string']], 'required' => ['team_id', 'org', 'repo', 'instance', 'user']])]
 	public function remove_team_repo(int $team_id, string $org, string $repo, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);

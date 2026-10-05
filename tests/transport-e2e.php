@@ -90,10 +90,14 @@ function runSuite(string $label, string $server, string $config, array $extraArg
 		$list = $probe->await(2, 20.0);
 		check('tools/list answered', $list !== null, 'no response within 20s');
 		$toolCount = isset($list['result']['tools']) ? count($list['result']['tools']) : 0;
-		check("tools/list returns the full tool set ({$toolCount} tools)", $toolCount > 50);
+		check("tools/list returns the full tool set ({$toolCount} tools)", $toolCount > 25);
 
 		$names = array_column($list['result']['tools'] ?? [], 'name');
 		check('tool names decoded intact', in_array('list_forgejo_instances', $names, true));
+		check(
+			'consolidated tools registered (#11)',
+			!array_diff(['attachment', 'issue', 'pull_request', 'pull_review', 'workflow', 'time_tracking'], $names)
+		);
 
 		// --- 4: offline tool call round-trips ---
 		$probe->send([

@@ -2,6 +2,8 @@
 /**
  * Forgejo MCP Server — Label Tools
  *
+ * Consolidated: one `label` tool whose `action` selects the operation.
+ *
  * @package    ForgejoMCP\Tools
  * @author     Daniel Morante
  * @copyright  2026 The Daniel Morante Company, Inc.
@@ -9,100 +11,66 @@
  */
 
 use EnchiladaMCP\McpTool;
+use Forgejo\ConsolidatedToolBase;
 use Forgejo\InstanceManager;
 
-class LabelTools
+class LabelTools extends ConsolidatedToolBase
 {
-	private InstanceManager $manager;
-
-	public function __construct(InstanceManager $manager)
-	{
-		$this->manager = $manager;
-	}
-
 	#[McpTool(
-		name: 'list_repo_labels',
-		description: 'List labels for a repository.',
-		readOnlyHint: true,
+		name: 'label',
+		description: 'Work with labels. Actions and their required parameters: list_repo(owner, repo), list_org(org), add(owner, repo, index, labels), remove(owner, repo, index, label_id).',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'page' => ['type' => 'integer', 'description' => 'Page number'],
-				'limit' => ['type' => 'integer', 'description' => 'Results per page'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'action' => ['type' => 'string', 'enum' => ['list_repo', 'list_org', 'add', 'remove']],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'org' => ['type' => 'string'],
+				'index' => ['type' => 'integer', 'description' => 'Issue or PR number'],
+				'labels' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Label IDs'],
+				'label_id' => ['type' => 'integer'],
+				'page' => ['type' => 'integer'],
+				'limit' => ['type' => 'integer', 'description' => 'default 20'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
-			'required' => ['owner', 'repo', 'instance', 'user'],
+			'required' => ['action', 'instance', 'user'],
+		],
+		renamedFrom: [
+			'list_repo_labels' => 'label action=list_repo',
+			'list_org_labels' => 'label action=list_org',
+			'add_issue_labels' => 'label action=add',
+			'remove_issue_labels' => 'label action=remove',
 		]
 	)]
+	public function label(string $action, ?string $owner = null, ?string $repo = null, ?string $org = null, ?int $index = null, ?array $labels = null, ?int $label_id = null, ?int $page = null, ?int $limit = null, string $instance = '', string $user = ''): mixed
+	{
+		return $this->dispatch('label', $action, get_defined_vars(), [
+			'list_repo' => ['handler' => [$this, 'list_repo_labels'], 'required' => ['owner', 'repo'], 'args' => ['owner', 'repo', 'page', 'limit', 'instance', 'user']],
+			'list_org' => ['handler' => [$this, 'list_org_labels'], 'required' => ['org'], 'args' => ['org', 'page', 'limit', 'instance', 'user']],
+			'add' => ['handler' => [$this, 'add_issue_labels'], 'required' => ['owner', 'repo', 'index', 'labels'], 'args' => ['owner', 'repo', 'index', 'labels', 'instance', 'user']],
+			'remove' => ['handler' => [$this, 'remove_issue_labels'], 'required' => ['owner', 'repo', 'index', 'label_id'], 'args' => ['owner', 'repo', 'index', 'label_id', 'instance', 'user']],
+		]);
+	}
+
 	public function list_repo_labels(string $owner, string $repo, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("repos/{$owner}/{$repo}/labels", ['page' => $page, 'limit' => $limit]);
 	}
 
-	#[McpTool(
-		name: 'list_org_labels',
-		description: 'List labels for an organization.',
-		readOnlyHint: true,
-		inputSchema: [
-			'type' => 'object',
-			'properties' => [
-				'org' => ['type' => 'string', 'description' => 'Organization name'],
-				'page' => ['type' => 'integer', 'description' => 'Page number'],
-				'limit' => ['type' => 'integer', 'description' => 'Results per page'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
-			],
-			'required' => ['org', 'instance', 'user'],
-		]
-	)]
 	public function list_org_labels(string $org, int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->get("orgs/{$org}/labels", ['page' => $page, 'limit' => $limit]);
 	}
 
-	#[McpTool(
-		name: 'add_issue_labels',
-		description: 'Add labels to an issue.',
-		inputSchema: [
-			'type' => 'object',
-			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'index' => ['type' => 'integer', 'description' => 'Issue index number'],
-				'labels' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Label IDs to add'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
-			],
-			'required' => ['owner', 'repo', 'index', 'labels', 'instance', 'user'],
-		]
-	)]
 	public function add_issue_labels(string $owner, string $repo, int $index, array $labels, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
 		return $client->post("repos/{$owner}/{$repo}/issues/{$index}/labels", ['labels' => $labels]);
 	}
 
-	#[McpTool(
-		name: 'remove_issue_labels',
-		description: 'Remove a label from an issue.',
-		inputSchema: [
-			'type' => 'object',
-			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'index' => ['type' => 'integer', 'description' => 'Issue index number'],
-				'label_id' => ['type' => 'integer', 'description' => 'Label ID to remove'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
-			],
-			'required' => ['owner', 'repo', 'index', 'label_id', 'instance', 'user'],
-		]
-	)]
 	public function remove_issue_labels(string $owner, string $repo, int $index, int $label_id, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);

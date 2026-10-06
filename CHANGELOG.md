@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.0.0] - 2026-10-05
+
+### Upgrade Notes
+- **Breaking: tool catalog consolidated from 134 to 33 tools** (#10, #11 phase 2). Resource families are now one tool each, selected by an `action` enum (e.g. `push_mirror action=add`, `attachment target=release action=create`; per-action required parameters are named in each tool description and enforced server-side). High-traffic tools stay standalone: `get_file_content`, `create_issue`, `list_repo_issues`, `get_issue_by_index`, `create_pull_request`, `merge_pull_request`. Calling a removed name returns an unknown-tool error naming the replacement tool and action. Full mapping: docs/TOOLS.md.
+- `tools/list` payload: 57,353 → 26,343 bytes (12,380 → 5,840 tokens after the compaction below; −65% bytes / −62% tokens versus 1.3.x master).
+
+### Added
+- `EnchiladaMCP\McpTool.renamedFrom` now accepts an array mapping each former tool name to a suggestion hint, so families consolidated into one tool can point old callers at the right `action`.
+- `Forgejo\ConsolidatedToolBase`: shared action dispatcher with per-action required-parameter validation and unknown-action errors listing valid actions.
+
+### Changed
+- Tool definitions are more compact: filler parameter descriptions (`owner`, `repo`, `instance`, `user`, `page`, ...) are dropped and tool descriptions tightened (#11, phase 1).
+
+### Added
+- `tests/measure-tools-list.php` — serializes the tool catalog in OpenAI function-array form and reports its cost in bytes and, when `tests/count-tokens.py` can run (python3 + `tokenizers`, optional), Qwen3 tokens. `--check` enforces `tests/tools-list.budget`; CI fails on any change that grows the catalog.
+
 ## [1.3.1] - 2026-09-11
 
 ### Fixed

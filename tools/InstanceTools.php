@@ -25,7 +25,7 @@ class InstanceTools
 	 */
 	#[McpTool(
 		name: 'list_forgejo_instances',
-		description: 'List all configured Forgejo instances with their users.',
+		description: 'List configured Forgejo instances and their users (valid instance/user values).',
 		readOnlyHint: true,
 		renamedFrom: 'forgejo_list_instances'
 	)]

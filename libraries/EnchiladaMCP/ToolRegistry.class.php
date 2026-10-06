@@ -31,7 +31,8 @@ class ToolRegistry
 	private array $handlers = [];
 
 	/**
-	 * Rename history: former tool name => current tool name.
+	 * Rename history: former tool name => suggestion text (current tool name,
+	 * or an action hint when many former tools consolidated into one).
 	 * Metadata only (not callable); feeds unknown-tool suggestions.
 	 *
 	 * @var array<string,string>
@@ -127,8 +128,12 @@ class ToolRegistry
 
 			$this->handlers[$toolName] = [$handler, $method->getName()];
 
-			if ($attr->renamedFrom !== null) {
+			if (is_string($attr->renamedFrom)) {
 				$this->renamedFrom[$attr->renamedFrom] = $toolName;
+			} elseif (is_array($attr->renamedFrom)) {
+				foreach ($attr->renamedFrom as $formerName => $hint) {
+					$this->renamedFrom[$formerName] = $hint;
+				}
 			}
 		}
 	}

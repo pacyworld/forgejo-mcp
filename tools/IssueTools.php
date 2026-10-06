@@ -2,6 +2,10 @@
 /**
  * Forgejo MCP Server — Issue Tools
  *
+ * High-traffic tools stay standalone (list_repo_issues, get_issue_by_index,
+ * create_issue); update_issue and issue_state_change are consolidated into
+ * the `issue` tool.
+ *
  * @package    ForgejoMCP\Tools
  * @author     Daniel Morante
  * @copyright  2026 The Daniel Morante Company, Inc.
@@ -9,34 +13,61 @@
  */
 
 use EnchiladaMCP\McpTool;
+use Forgejo\ConsolidatedToolBase;
 use Forgejo\InstanceManager;
 
-class IssueTools
+class IssueTools extends ConsolidatedToolBase
 {
-	private InstanceManager $manager;
-
-	public function __construct(InstanceManager $manager)
+	#[McpTool(
+		name: 'issue',
+		description: 'Modify an issue. Actions and their required parameters: update(owner, repo, index; only given fields change; optional title, body, state, milestone, assignees), state_change(owner, repo, index, state).',
+		inputSchema: [
+			'type' => 'object',
+			'properties' => [
+				'action' => ['type' => 'string', 'enum' => ['update', 'state_change']],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'index' => ['type' => 'integer', 'description' => 'Issue number'],
+				'title' => ['type' => 'string'],
+				'body' => ['type' => 'string'],
+				'state' => ['type' => 'string', 'description' => 'open|closed'],
+				'milestone' => ['type' => 'integer', 'description' => 'Milestone ID; 0 clears'],
+				'assignees' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Usernames'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
+			],
+			'required' => ['action', 'instance', 'user'],
+		],
+		renamedFrom: [
+			'update_issue' => 'issue action=update',
+			'issue_state_change' => 'issue action=state_change',
+		]
+	)]
+	public function issue(string $action, ?string $owner = null, ?string $repo = null, ?int $index = null, ?string $title = null, ?string $body = null, ?string $state = null, ?int $milestone = null, ?array $assignees = null, string $instance = '', string $user = ''): mixed
 	{
-		$this->manager = $manager;
+		return $this->dispatch('issue', $action, get_defined_vars(), [
+			'update' => ['handler' => [$this, 'update_issue'], 'required' => ['owner', 'repo', 'index'], 'args' => ['owner', 'repo', 'index', 'title', 'body', 'state', 'milestone', 'assignees', 'instance', 'user']],
+			'state_change' => ['handler' => [$this, 'issue_state_change'], 'required' => ['owner', 'repo', 'index', 'state'], 'args' => ['owner', 'repo', 'index', 'state', 'instance', 'user']],
+		]);
 	}
 
 	#[McpTool(
 		name: 'list_repo_issues',
-		description: 'List issues in a repository.',
+		description: 'List issues (or PRs) in a repository.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'state' => ['type' => 'string', 'description' => 'Filter by state: open, closed, all (default open)'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'state' => ['type' => 'string', 'description' => 'open|closed|all (default open)'],
 				'labels' => ['type' => 'string', 'description' => 'Comma-separated label names'],
 				'milestone' => ['type' => 'string', 'description' => 'Milestone name or ID'],
-				'page' => ['type' => 'integer', 'description' => 'Page number (default 1)'],
-				'limit' => ['type' => 'integer', 'description' => 'Results per page (default 20)'],
-				'type' => ['type' => 'string', 'description' => 'Filter by type: issues, pulls (default issues)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'page' => ['type' => 'integer'],
+				'limit' => ['type' => 'integer', 'description' => 'default 20'],
+				'type' => ['type' => 'string', 'description' => 'issues|pulls (default issues)'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'instance', 'user'],
 		]
@@ -52,16 +83,16 @@ class IssueTools
 
 	#[McpTool(
 		name: 'get_issue_by_index',
-		description: 'Get a specific issue by its index number.',
+		description: 'Get an issue by index.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'index' => ['type' => 'integer', 'description' => 'Issue index number'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'index' => ['type' => 'integer'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
 		]
@@ -74,19 +105,19 @@ class IssueTools
 
 	#[McpTool(
 		name: 'create_issue',
-		description: 'Create a new issue in a repository.',
+		description: 'Create an issue.',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'title' => ['type' => 'string', 'description' => 'Issue title'],
-				'body' => ['type' => 'string', 'description' => 'Issue body (Markdown)'],
-				'labels' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Label IDs to assign'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'title' => ['type' => 'string'],
+				'body' => ['type' => 'string', 'description' => 'Markdown'],
+				'labels' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Label IDs'],
 				'milestone' => ['type' => 'integer', 'description' => 'Milestone ID'],
-				'assignees' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Usernames to assign'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'assignees' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Usernames'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['owner', 'repo', 'title', 'instance', 'user'],
 		]
@@ -102,26 +133,6 @@ class IssueTools
 		return $client->post("repos/{$owner}/{$repo}/issues", $data);
 	}
 
-	#[McpTool(
-		name: 'update_issue',
-		description: 'Update an existing issue (title, body, assignees, milestone, state).',
-		inputSchema: [
-			'type' => 'object',
-			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'index' => ['type' => 'integer', 'description' => 'Issue index number'],
-				'title' => ['type' => 'string', 'description' => 'New title'],
-				'body' => ['type' => 'string', 'description' => 'New body'],
-				'state' => ['type' => 'string', 'description' => 'New state: open or closed'],
-				'milestone' => ['type' => 'integer', 'description' => 'Milestone ID (0 to clear)'],
-				'assignees' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Assignee usernames'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
-			],
-			'required' => ['owner', 'repo', 'index', 'instance', 'user'],
-		]
-	)]
 	public function update_issue(string $owner, string $repo, int $index, ?string $title = null, ?string $body = null, ?string $state = null, ?int $milestone = null, ?array $assignees = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -134,22 +145,6 @@ class IssueTools
 		return $client->patch("repos/{$owner}/{$repo}/issues/{$index}", $data);
 	}
 
-	#[McpTool(
-		name: 'issue_state_change',
-		description: 'Open or close an issue.',
-		inputSchema: [
-			'type' => 'object',
-			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Repository owner'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name'],
-				'index' => ['type' => 'integer', 'description' => 'Issue index number'],
-				'state' => ['type' => 'string', 'description' => 'New state: open or closed'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
-			],
-			'required' => ['owner', 'repo', 'index', 'state', 'instance', 'user'],
-		]
-	)]
 	public function issue_state_change(string $owner, string $repo, int $index, string $state, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);

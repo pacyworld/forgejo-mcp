@@ -86,7 +86,7 @@ class PullRequestToolsTest extends TestCase
 		$this->assertSame('open', $result['pr_state']);
 		$this->assertStringContainsString('not a failure', $result['message']);
 		$this->assertStringContainsString('Do NOT retry', $result['message']);
-		$this->assertStringContainsString('get_pull_request_by_index', $result['message']);
+		$this->assertStringContainsString('pull_request action=get', $result['message']);
 	}
 
 	public function testMergeTimeoutCheckFailsFallsBack(): void

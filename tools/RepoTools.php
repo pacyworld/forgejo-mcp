@@ -2,6 +2,10 @@
 /**
  * Forgejo MCP Server — Repository Tools
  *
+ * Consolidated: one `repo` tool for create/fork/list_mine; search_repos
+ * stays standalone. Repository file browsing moved to FileTools (`file`
+ * tool, actions list_contents/tree).
+ *
  * @package    ForgejoMCP\Tools
  * @author     Daniel Morante
  * @copyright  2026 The Daniel Morante Company, Inc.
@@ -9,50 +13,60 @@
  */
 
 use EnchiladaMCP\McpTool;
+use Forgejo\ConsolidatedToolBase;
 use Forgejo\InstanceManager;
 
-class RepoTools
+class RepoTools extends ConsolidatedToolBase
 {
-	private InstanceManager $manager;
-
-	public function __construct(InstanceManager $manager)
-	{
-		$this->manager = $manager;
-	}
-
 	#[McpTool(
-		name: 'list_my_repos',
-		description: 'List repositories owned by the authenticated user.',
-		readOnlyHint: true,
+		name: 'repo',
+		description: 'Manage repositories. Actions and their required parameters: list_mine, create(name; optional organization, description, private, auto_init, default_branch), fork(owner, repo; optional organization, name).',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'page' => ['type' => 'integer', 'description' => 'Page number (default 1)'],
-				'limit' => ['type' => 'integer', 'description' => 'Results per page (default 20)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'action' => ['type' => 'string', 'enum' => ['list_mine', 'create', 'fork']],
+				'name' => ['type' => 'string'],
+				'description' => ['type' => 'string'],
+				'owner' => ['type' => 'string'],
+				'repo' => ['type' => 'string'],
+				'organization' => ['type' => 'string', 'description' => 'Org to create/fork into instead of the authenticated user'],
+				'private' => ['type' => 'boolean', 'description' => 'default false'],
+				'auto_init' => ['type' => 'boolean', 'description' => 'Initialize with README (default false)'],
+				'default_branch' => ['type' => 'string', 'description' => 'default "master"'],
+				'page' => ['type' => 'integer'],
+				'limit' => ['type' => 'integer', 'description' => 'default 20'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
-			'required' => ['instance', 'user'],
+			'required' => ['action', 'instance', 'user'],
+		],
+		renamedFrom: [
+			'list_my_repos' => 'repo action=list_mine',
+			'create_repo' => 'repo action=create',
+			'fork_repo' => 'repo action=fork',
 		]
 	)]
-	public function list_my_repos(int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
+	public function repo(string $action, ?string $name = null, ?string $description = null, ?string $owner = null, ?string $repo = null, ?string $organization = null, ?bool $private = null, ?bool $auto_init = null, ?string $default_branch = null, ?int $page = null, ?int $limit = null, string $instance = '', string $user = ''): mixed
 	{
-		$client = $this->manager->getClient($instance, $user);
-		return $client->get('user/repos', ['page' => $page, 'limit' => $limit]);
+		return $this->dispatch('repo', $action, get_defined_vars(), [
+			'list_mine' => ['handler' => [$this, 'list_my_repos'], 'required' => [], 'args' => ['page', 'limit', 'instance', 'user']],
+			'create' => ['handler' => [$this, 'create_repo'], 'required' => ['name'], 'args' => ['name', 'description', 'organization', 'private', 'auto_init', 'default_branch', 'instance', 'user']],
+			'fork' => ['handler' => [$this, 'fork_repo'], 'required' => ['owner', 'repo'], 'args' => ['owner', 'repo', 'organization', 'name', 'instance', 'user']],
+		]);
 	}
 
 	#[McpTool(
 		name: 'search_repos',
-		description: 'Search repositories across the Forgejo instance.',
+		description: 'Search repositories on the instance.',
 		readOnlyHint: true,
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
-				'q' => ['type' => 'string', 'description' => 'Search query'],
-				'page' => ['type' => 'integer', 'description' => 'Page number (default 1)'],
-				'limit' => ['type' => 'integer', 'description' => 'Results per page (default 20)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
+				'q' => ['type' => 'string'],
+				'page' => ['type' => 'integer'],
+				'limit' => ['type' => 'integer', 'description' => 'default 20'],
+				'instance' => ['type' => 'string'],
+				'user' => ['type' => 'string'],
 			],
 			'required' => ['q', 'instance', 'user'],
 		]
@@ -63,24 +77,12 @@ class RepoTools
 		return $client->get('repos/search', ['q' => $q, 'page' => $page, 'limit' => $limit]);
 	}
 
-	#[McpTool(
-		name: 'create_repo',
-		description: 'Create a new repository. If organization is specified, creates under that org; otherwise creates under the authenticated user.',
-		inputSchema: [
-			'type' => 'object',
-			'properties' => [
-				'name' => ['type' => 'string', 'description' => 'Repository name'],
-				'description' => ['type' => 'string', 'description' => 'Repository description'],
-				'organization' => ['type' => 'string', 'description' => 'Organization to create the repo under (omit for personal repo)'],
-				'private' => ['type' => 'boolean', 'description' => 'Whether the repo is private (default false)'],
-				'auto_init' => ['type' => 'boolean', 'description' => 'Initialize with README (default false)'],
-				'default_branch' => ['type' => 'string', 'description' => 'Default branch name (default "master")'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
-			],
-			'required' => ['name', 'instance', 'user'],
-		]
-	)]
+	public function list_my_repos(int $page = 1, int $limit = 20, string $instance = '', string $user = ''): array
+	{
+		$client = $this->manager->getClient($instance, $user);
+		return $client->get('user/repos', ['page' => $page, 'limit' => $limit]);
+	}
+
 	public function create_repo(string $name, string $description = '', ?string $organization = null, bool $private = false, bool $auto_init = false, string $default_branch = 'master', string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -99,22 +101,6 @@ class RepoTools
 		return $client->post('user/repos', $data);
 	}
 
-	#[McpTool(
-		name: 'fork_repo',
-		description: 'Fork a repository.',
-		inputSchema: [
-			'type' => 'object',
-			'properties' => [
-				'owner' => ['type' => 'string', 'description' => 'Owner of the repo to fork'],
-				'repo' => ['type' => 'string', 'description' => 'Repository name to fork'],
-				'organization' => ['type' => 'string', 'description' => 'Fork to this organization (optional)'],
-				'name' => ['type' => 'string', 'description' => 'Name for the forked repo (optional)'],
-				'instance' => ['type' => 'string', 'description' => 'Forgejo instance name'],
-				'user' => ['type' => 'string', 'description' => 'User identity'],
-			],
-			'required' => ['owner', 'repo', 'instance', 'user'],
-		]
-	)]
 	public function fork_repo(string $owner, string $repo, ?string $organization = null, ?string $name = null, string $instance = '', string $user = ''): array
 	{
 		$client = $this->manager->getClient($instance, $user);
@@ -122,25 +108,5 @@ class RepoTools
 		if ($organization !== null) $data['organization'] = $organization;
 		if ($name !== null) $data['name'] = $name;
 		return $client->post("repos/{$owner}/{$repo}/forks", $data ?: null);
-	}
-
-	#[McpTool(name: 'list_repo_contents', description: 'List files and directories at a given path in a repository. Use path="" for the root.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'path' => ['type' => 'string', 'description' => 'Directory path (empty string for root)'], 'ref' => ['type' => 'string', 'description' => 'Branch, tag, or SHA (optional)'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'instance', 'user']])]
-	public function list_repo_contents(string $owner, string $repo, string $path = '', ?string $ref = null, string $instance = '', string $user = ''): array
-	{
-		$client = $this->manager->getClient($instance, $user);
-		$endpoint = "repos/{$owner}/{$repo}/contents";
-		if (!empty($path)) $endpoint .= "/{$path}";
-		$query = [];
-		if ($ref !== null) $query['ref'] = $ref;
-		return $client->get($endpoint, $query);
-	}
-
-	#[McpTool(name: 'get_repo_tree', description: 'Get the Git tree of a repository. With recursive=true, returns the complete file tree.', readOnlyHint: true, inputSchema: ['type' => 'object', 'properties' => ['owner' => ['type' => 'string', 'description' => 'Repository owner'], 'repo' => ['type' => 'string', 'description' => 'Repository name'], 'sha' => ['type' => 'string', 'description' => 'Tree SHA or branch name'], 'recursive' => ['type' => 'boolean', 'description' => 'Recurse into subtrees (default false)'], 'instance' => ['type' => 'string', 'description' => 'Forgejo instance'], 'user' => ['type' => 'string', 'description' => 'User identity']], 'required' => ['owner', 'repo', 'sha', 'instance', 'user']])]
-	public function get_repo_tree(string $owner, string $repo, string $sha, bool $recursive = false, string $instance = '', string $user = ''): array
-	{
-		$client = $this->manager->getClient($instance, $user);
-		$query = [];
-		if ($recursive) $query['recursive'] = 'true';
-		return $client->get("repos/{$owner}/{$repo}/git/trees/{$sha}", $query);
 	}
 }

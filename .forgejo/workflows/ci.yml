@@ -22,3 +22,11 @@ jobs:
 
       - name: Run tests
         run: phpunit
+
+      # tools/list size gate: fails when the serialized tool catalog exceeds
+      # tests/tools-list.budget. Byte metric only (tokenizer independent);
+      # the token metric needs python3-tokenizers and is published from dev
+      # machines instead. Lower a budget deliberately in the same PR that
+      # shrinks the catalog; never raise it without a plan/issue reference.
+      - name: tools/list budget
+        run: php tests/measure-tools-list.php --check

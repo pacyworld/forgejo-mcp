@@ -20,7 +20,7 @@ class WorkflowTools extends ConsolidatedToolBase
 {
 	#[McpTool(
 		name: 'workflow',
-		description: 'Work with Actions workflows. Actions and their required parameters: dispatch(owner, repo, workflow_id, ref; optional inputs), list_runs(owner, repo; optional status), get_run(owner, repo, run_id), list_jobs(owner, repo, run_id), job_logs(owner, repo, run_id; optional job_index 0-based, attempt; before Forgejo 16 works for public repositories only), job_logs_by_id(owner, repo, job_id; optional attempt 1-based, latest if omitted; Forgejo 16+ only), download_run_logs(owner, repo, run_id; every job, or raw ZIP base64 when the host cannot extract; Forgejo 16+ only). All take owner, repo.',
+		description: 'Work with Actions workflows. Actions and their required parameters: dispatch(owner, repo, workflow_id, ref; optional inputs), list_runs(owner, repo; optional status), get_run(owner, repo, run_id), list_jobs(owner, repo, run_id), job_logs(owner, repo, run_id; optional job_index 0-based, attempt; web-route fallback is public-repos only), job_logs_by_id(owner, repo, job_id; optional attempt 1-based, latest if omitted; Forgejo 16+ only), download_run_logs(owner, repo, run_id; every job, or raw ZIP base64 when the host cannot extract; Forgejo 16+ only). All take owner, repo.',
 		inputSchema: [
 			'type' => 'object',
 			'properties' => [
@@ -142,7 +142,7 @@ class WorkflowTools extends ConsolidatedToolBase
 	{
 		$client = $this->manager->getClient($instance, $user);
 
-		// Forgejo 16+ exposes logs via the REST API with token auth — prefer it.
+		// Prefer the token-authenticated REST logs API when the server has it.
 		if ($client->supportsActionLogsApi()) {
 			return $this->getJobLogsViaApi($client, $owner, $repo, $run_id, $job_index, $attempt);
 		}
@@ -154,9 +154,9 @@ class WorkflowTools extends ConsolidatedToolBase
 				$url = $client->getBaseUrl() . "/{$owner}/{$repo}/actions/runs/{$run_id}/jobs/{$job_index}/attempt/{$attempt}/logs";
 				return [
 					'error' => 'Log download failed (404). This is likely a private repository.',
-					'reason' => 'This server predates the Forgejo 16 action logs REST API. Logs are served from a web route that requires browser session authentication. API tokens are not accepted for this endpoint.',
-					'limitation' => 'This is a Forgejo platform limitation on servers older than 16.0, not a bug in this MCP server.',
-					'workaround' => "View the logs in your browser: {$url} — or upgrade the server to Forgejo 16+ to enable API log download (workflow action=job_logs_by_id).",
+					'reason' => 'Logs are served from a web route that requires browser session authentication; API tokens are not accepted for this endpoint.',
+					'limitation' => 'Platform limitation of servers older than 16.0.',
+					'workaround' => "View the logs in your browser: {$url} — or on a Forgejo 16+ server use workflow action=job_logs_by_id for API log download.",
 				];
 			}
 			throw $e;
@@ -272,7 +272,7 @@ class WorkflowTools extends ConsolidatedToolBase
 	}
 
 	/**
-	 * Fetch job logs via the Forgejo 16+ REST API for get_workflow_job_logs.
+	 * Fetch job logs via the REST logs API for get_workflow_job_logs.
 	 *
 	 * Resolves the job index within the run to a job ID, then downloads the
 	 * plaintext log for the requested attempt.
@@ -315,7 +315,7 @@ class WorkflowTools extends ConsolidatedToolBase
 
 	/**
 	 * Return a structured "feature not supported" response when the connected
-	 * server predates the Forgejo 16 action logs API, or null when supported.
+	 * server lacks the action logs API, or null when supported.
 	 *
 	 * @return array|null Structured error response, or null when supported
 	 */
@@ -330,7 +330,7 @@ class WorkflowTools extends ConsolidatedToolBase
 			'error' => 'The action log download API is not available on this server.',
 			'required_version' => 'Forgejo ' . \Forgejo\Client::ACTION_LOGS_API_MIN_VERSION . ' or newer',
 			'detected_version' => $version !== '' ? $version : 'unknown',
-			'details' => 'Downloading action logs over the REST API (actions/jobs/{job_id}/logs and actions/runs/{run_id}/logs) was added in Forgejo 16. The connected server reports an older version, so these endpoints do not exist there.',
+			'details' => 'Log download endpoints (actions/jobs/{job_id}/logs and actions/runs/{run_id}/logs) require Forgejo 16+; the connected server reports an older version, so they do not exist there.',
 			'workaround' => 'View logs in the browser, or use workflow action=job_logs which falls back to the legacy web route (public repositories only).',
 		];
 	}

@@ -4,7 +4,7 @@ A PHP Model Context Protocol server for Forgejo instances, built on the [Enchila
 
 ## Features
 
-- **125+ MCP tools** covering repositories, issues, pull requests, releases, workflows, organizations, and more
+- **33 MCP tools** covering repositories, issues, pull requests, releases, workflows, organizations, and more — one tool per resource family, selected by an `action` enum. The whole catalog costs ~5.8k tokens in client context (down from ~15.5k in v1.x)
 - **7 resource templates** using the `forgejo://` URI scheme for content-addressable entity access
 - **Multi-instance** — manage multiple Forgejo/Gitea servers from a single MCP server
 - **Multi-user** — switch between user identities within each instance (tokens in config, no env vars)
@@ -92,74 +92,35 @@ Config file is auto-discovered from these locations (first found wins):
 
 ## Tools
 
-### Repository
-`list_my_repos`, `search_repos`, `create_repo`, `fork_repo`, `list_repo_contents`, `get_repo_tree`
+Since v2.0.0 most resource families are **one tool per family**, selected by an `action` enum; each tool description lists its actions and their required parameters (enforced server-side). High-traffic tools stay standalone.
 
-### Branch
-`list_branches`, `create_branch`, `delete_branch`
+**Standalone:** `list_repo_issues`, `get_issue_by_index`, `create_issue`, `create_pull_request`, `merge_pull_request`, `get_file_content`, `search_repos`, `search_users`, `list_repo_commits`, `list_repo_milestones`, `get_my_user_info`, `list_forgejo_instances`, `get_forgejo_mcp_server_version`, `get_forgejo_version`
 
-### File
-`get_file_content`, `create_file`, `update_file`, `delete_file`
+**Consolidated (action-dispatched):**
 
-### Commit
-`list_repo_commits`
+| Tool | Actions |
+|------|---------|
+| `attachment` (`target`: `issue`/`comment`/`release`) | `list` `get` `download` `create` `edit` `delete` |
+| `branch` | `list` `create` `delete` |
+| `repo` | `list_mine` `create` `fork` |
+| `file` | `create` `update` `delete` `list_contents` `tree` |
+| `issue` | `update` `state_change` |
+| `issue_comment` | `list` `get` `create` `edit` `delete` |
+| `label` | `list_repo` `list_org` `add` `remove` |
+| `pull_request` | `list` `get` `update` `files` `diff` |
+| `pull_review` | `list` `get` `comments` `create` `submit` `delete` `dismiss` `request_reviewers` `delete_requests` |
+| `release` | `list` `get_by_id` `get_by_tag` `latest` `create` `edit` `delete` `delete_by_tag` |
+| `notification` | `check` `list_repo` `get_thread` `mark_read` `mark_all_read` `mark_repo_read` |
+| `org` | `get` `create` `edit` `delete` `list_mine` `list_user` `list_members` `check_membership` `remove_member` |
+| `team` | `list` `search` `create` `add_member` `remove_member` `add_repo` `remove_repo` |
+| `tag` | `list` `get` `create` `delete` |
+| `package` | `list` `get` `list_files` `delete` |
+| `push_mirror` | `list` `add` `get` `delete` `sync` |
+| `time_tracking` | `list_issue` `list_repo` `list_mine` `add` `reset` `delete_entry` `start_stopwatch` `stop_stopwatch` `cancel_stopwatch` `list_stopwatches` |
+| `workflow` | `dispatch` `list_runs` `get_run` `list_jobs` `job_logs` `job_logs_by_id` `download_run_logs` |
+| `action_secret` | `list_repo` `set_repo` `delete_repo` `list_org` `set_org` `delete_org` |
 
-### Issue
-`list_repo_issues`, `get_issue_by_index`, `create_issue`, `update_issue`, `issue_state_change`
-
-### Labels
-`list_repo_labels`, `list_org_labels`, `add_issue_labels`, `remove_issue_labels`
-
-### Milestones
-`list_repo_milestones`
-
-### Comments
-`list_issue_comments`, `get_issue_comment`, `create_issue_comment`, `edit_issue_comment`, `delete_issue_comment`
-
-### Pull Requests
-`list_repo_pull_requests`, `get_pull_request_by_index`, `create_pull_request`, `update_pull_request`, `merge_pull_request`, `list_pull_request_files`, `get_pull_request_diff`
-
-### Reviews
-`list_pull_reviews`, `get_pull_review`, `list_pull_review_comments`, `create_pull_review`, `submit_pull_review`, `delete_pull_review`, `dismiss_pull_review`, `create_review_requests`, `delete_review_requests`
-
-### Notifications
-`check_notifications`, `get_notification_thread`, `mark_notification_read`, `mark_all_notifications_read`, `list_repo_notifications`, `mark_repo_notifications_read`
-
-### Releases
-`list_releases`, `get_release_by_id`, `get_release_by_tag`, `get_latest_release`, `create_release`, `edit_release`, `delete_release`, `delete_release_by_tag`
-
-### Attachments (Issue / Comment / Release)
-`list_*_attachments`, `get_*_attachment`, `create_*_attachment`, `edit_*_attachment`, `download_*_attachment`, `delete_*_attachment`
-
-### Workflows & Actions
-`dispatch_workflow`, `list_workflow_runs`, `get_workflow_run`, `get_workflow_run_jobs`, `get_workflow_job_logs`
-
-### Action Secrets
-`list_repo_action_secrets`, `create_or_update_repo_action_secret`, `delete_repo_action_secret`, `list_org_action_secrets`, `create_or_update_org_action_secret`, `delete_org_action_secret`
-
-### Time Tracking
-`list_issue_tracked_times`, `list_repo_tracked_times`, `list_my_tracked_times`, `add_issue_time`, `reset_issue_time`, `delete_issue_time_entry`, `start_issue_stopwatch`, `stop_issue_stopwatch`, `cancel_issue_stopwatch`, `list_my_stopwatches`
-
-### Organizations
-`get_org`, `create_org`, `edit_org`, `delete_org`, `list_my_orgs`, `list_user_orgs`, `list_org_members`, `check_org_membership`, `remove_org_member`, `list_org_teams`, `search_org_teams`, `create_org_team`, `add_team_member`, `remove_team_member`, `add_team_repo`, `remove_team_repo`
-
-### Tags
-`list_tags`, `get_tag`, `create_tag`, `delete_tag`
-
-### Packages
-`list_packages`, `get_package`, `delete_package`, `list_package_files`
-
-### Push Mirrors
-`list_push_mirrors`, `add_push_mirror`, `get_push_mirror`, `delete_push_mirror`, `sync_push_mirror`
-
-### Users
-`get_my_user_info`, `search_users`
-
-### Instance Management
-`list_forgejo_instances`
-
-### Server
-`get_forgejo_mcp_server_version`
+Calling a v1.x tool name returns an error naming the replacement tool and action. Full mapping: [docs/TOOLS.md](docs/TOOLS.md).
 
 ## Resources
 
